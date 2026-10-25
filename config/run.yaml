@@ -1,0 +1,105 @@
+# 全部可调参数。脚本只从这里读，不硬编码。
+seed: 2026
+seeds: [11, 22, 33]            # 分级模型的三个训练种子
+
+paths:
+  raw_ddr: data/raw/DDR/DDR_dataset
+  raw_deepdrid: data/raw/DeepDRiD/regular_fundus_images
+  raw_idrid: data/raw/IDRiD
+  raw_messidor2: data/raw/Messidor2
+  raw_aptos: data/raw/APTOS
+  raw_eyepacs: data/raw/EyePACS       # 第四外部队列 EyePACS，只做外部评价
+  processed: data/processed
+  checkpoints: data/checkpoints
+
+preprocess:
+  canon_size: 1536             # 眼底视盘外接正方形统一重采样到的边长（高分辨率坐标系）
+  global_size: 512             # 全局输入边长
+  global_size_large: 1024      # 高分辨率全局对照
+  fundus_threshold: 6          # 视野前景：与背景色的最大通道差阈值（模糊缩略图上）
+  jpeg_quality: 95
+
+segmenter:
+  encoder: resnet18
+  classes: [MA, HE, EX, SE]
+  patch: 512
+  batch_size: 16
+  epochs: 120
+  lr: 3.0e-4
+  weight_decay: 1.0e-4
+  patches_per_image: 8
+  lesion_patch_frac: 0.7       # 训练补丁中以病灶像素为中心的比例
+  prob_map_size: 768           # 保存的概率图边长（canon_size / 2）
+
+segmenter_neg:                 # 健康照片阴性监督微调（03c）：0 级照片无病灶，以原分割器的误报处为中心取阴性补丁
+  negative_roles: [ddr_train, aptos_train]
+  hard_frac: 0.7               # 阴性补丁中以预测病灶像素为中心的比例
+  epochs: 40
+  lr: 1.0e-4
+  eval_every: 5
+
+selection:
+  crop: 384                    # 局部裁块边长（canon 坐标）
+  k: 4
+  grid_stride: 96               # 四分之一窗口（开发区掩膜上比半窗口对所有规则都更好）
+  min_fundus_frac: 0.5         # 候选裁块内视野像素的最小比例
+  # 分量阈值：逐类在开发区掩膜上校准（04b_calibration），不在此处设定
+  comp_min_pixels: 2           # 概率图（768）上的最小分量面积
+  max_comp_centres: 96         # 分量中心候选上限（按分量得分）
+  nms_iou_grid: [0.0, 0.1, 0.2, 0.3, 0.5]
+  dpp_theta_grid: [0.1, 0.3, 0.5, 0.7, 0.9]   # 质量—多样性权衡
+  dpp_sigma_frac: 0.25         # 空间相似核的尺度（以 canon 边长为单位）
+  k_ablation: [2, 4, 8]
+  threshold_shift: [-1.0, 1.0]  # 阈值扰动：对数几率尺度平移 ±1
+
+classifier:
+  backbone: convnext_tiny.fb_in22k_ft_in1k
+  backbone_large: convnext_small.fb_in22k_ft_in1k   # 更大编码器的对照（variant small）
+  backbone_rf: data/weights/retfound/pytorch_model.bin   # RETFound 彩色眼底 MAE 权重（variant rf；timm ViT-L/16 格式）
+  rf_recipe: {lr: 2.5e-4, layer_decay: 0.65, drop_path: 0.2, head_lr: 1.0e-3}
+  backbone_base: convnext_base.fb_in22k_ft_in1k        # variant base
+  backbone_effm: tf_efficientnetv2_m.in21k_ft_in1k     # variant effm
+  backbone_dino: vit_base_patch14_dinov2.lvd142m       # variant dino（自然图像自监督 ViT-B/14）
+  dino_recipe: {lr: 1.0e-4, layer_decay: 0.75, drop_path: 0.1, head_lr: 1.0e-3}
+  ema_decay: 0.999             # variant ema：权重指数滑动平均的衰减率
+  ord_weight: 0.25             # variant ord：期望等级平方误差损失的权重
+  epochs: 12
+  batch_size: 16
+  lr: 1.0e-4
+  head_lr: 1.0e-3
+  weight_decay: 0.05
+  warmup_epochs: 1
+  attn_dim: 256
+  crop_jitter: 16              # 训练时裁块位置的随机抖动（canon 像素）
+  crop_aux_weight: 0.5         # 裁块分支辅助分级头的损失权重（variant aux）
+  global_drop: 0.5             # 训练时遮掉全局特征的概率（variant gdrop）
+  hn_factor: 3                 # variant hn：易被误读的健康照片（候选病灶分量数在 0 级上四分位以上）的抽样权重
+  hn_quantile: 0.75
+  main_variant: aux            # 主分析的训练方式：裁块分支加辅助分级头（开发区先导中开发区 κ 最高）
+  num_workers: 16
+
+# 训练超参组合：只用一个种子在 DDR 开发区 κ 上比较，选出的组合再用三个种子训练全部主输入
+recipes:
+  ls:   {label_smoothing: 0.1}
+  dp:   {drop_path: 0.2}
+  reg:  {label_smoothing: 0.1, drop_path: 0.2}
+  lr5:  {lr: 5.0e-5}
+  reg20: {label_smoothing: 0.1, drop_path: 0.2, epochs: 20}
+  reg8: {label_smoothing: 0.1, drop_path: 0.2, epochs: 8}
+
+coverage_eval:
+  retain_frac: 0.8             # 参考分量被某一裁块保留 ≥80% 面积视为覆盖
+  small_area_quantile: 0.5     # 小病灶：面积低于该类别中位数
+
+stats:
+  n_boot: 5000
+  primary_contrasts: [[C, N], [C, D]]
+
+occlusion:                     # 08k：固定已训练的分级器，遮挡裁块内的微动脉瘤并与同形状随机遮挡对照
+  role: ddr_test
+  rule: C                      # 病灶覆盖规则的裁块与其辅助头主设置模型（C_k4_s*_aux）
+  variant: aux
+  dilate_px: 3                 # 遮挡掩膜外扩（canon 像素）
+  inpaint_radius: 5            # cv2.inpaint（Telea）半径
+  ctrl_tries: 500              # 对照斑块随机放置的最大尝试次数
+  batch_size: 16

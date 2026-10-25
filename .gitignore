@@ -1,0 +1,9 @@
+/data/
+/results/
+/figures/
+/logs/
+__pycache__/
+*.pt
+*.pth
+*.npz
+*.h5

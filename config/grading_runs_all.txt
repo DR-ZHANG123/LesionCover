@@ -1,0 +1,138 @@
+G512 11 4
+G1024 11 4
+G512 22 4
+G1024 22 4
+G512 33 4
+G1024 33 4
+C 11 4 aux
+N 11 4 aux
+D 11 4 aux
+T 11 4 aux
+U 11 4 aux
+R 11 4 aux
+C 22 4 aux
+N 22 4 aux
+D 22 4 aux
+T 22 4 aux
+U 22 4 aux
+R 22 4 aux
+C 33 4 aux
+N 33 4 aux
+D 33 4 aux
+T 33 4 aux
+U 33 4 aux
+R 33 4 aux
+Cmass 11 4 aux
+S 11 4 aux
+Cmass 22 4 aux
+S 22 4 aux
+Cmass 33 4 aux
+S 33 4 aux
+C 11 2 aux
+N 11 2 aux
+D 11 2 aux
+C 11 8 aux
+N 11 8 aux
+D 11 8 aux
+C 33 4
+D 11 4
+R 22 4
+# 标准融合（无辅助头）对照
+C 11 4
+N 11 4
+D 11 4
+T 11 4
+U 11 4
+R 11 4
+C 22 4
+N 22 4
+D 22 4
+T 22 4
+U 22 4
+R 22 4
+C 33 4
+N 33 4
+D 33 4
+T 33 4
+U 33 4
+R 33 4
+Cmass 11 4
+# 开发区先导：遮掉全局图的训练方式
+C 11 4 gdrop
+C 11 4 auxgdrop
+# 稳健性：跨相机伪影增强（art / auxart）与更大编码器（small / auxsmall）
+C 11 4 auxart
+G512 11 4 art
+N 11 4 auxart
+D 11 4 auxart
+G512 11 4 small
+C 11 4 auxsmall
+N 11 4 auxsmall
+C 22 4 auxart
+G512 22 4 art
+N 22 4 auxart
+D 22 4 auxart
+G512 22 4 small
+C 22 4 auxsmall
+N 22 4 auxsmall
+C 33 4 auxart
+G512 33 4 art
+N 33 4 auxart
+D 33 4 auxart
+G512 33 4 small
+C 33 4 auxsmall
+N 33 4 auxsmall
+C 11 4 auxmc
+G512 11 4 mc
+N 11 4 auxmc
+C 22 4 auxmc
+G512 22 4 mc
+N 22 4 auxmc
+C 33 4 auxmc
+G512 33 4 mc
+N 33 4 auxmc
+C 11 4 auxmchn
+N 11 4 auxmchn
+G512 11 4 mchn
+C 22 4 auxmchn
+N 22 4 auxmchn
+G512 22 4 mchn
+C 33 4 auxmchn
+N 33 4 auxmchn
+G512 33 4 mchn
+G512 11 4 base
+G512 22 4 base
+G512 33 4 base
+C 11 4 auxbase
+C 22 4 auxbase
+C 33 4 auxbase
+N 11 4 auxbase
+N 22 4 auxbase
+N 33 4 auxbase
+G512 11 4 mcsmall
+G512 22 4 mcsmall
+G512 33 4 mcsmall
+C 11 4 auxmcsmall
+C 22 4 auxmcsmall
+C 33 4 auxmcsmall
+N 11 4 auxmcsmall
+N 22 4 auxmcsmall
+N 33 4 auxmcsmall
+G512 11 4 mcbase
+G512 22 4 mcbase
+G512 33 4 mcbase
+C 11 4 auxmcbase
+C 22 4 auxmcbase
+C 33 4 auxmcbase
+N 11 4 auxmcbase
+N 22 4 auxmcbase
+N 33 4 auxmcbase
+G512 11 4 mcart
+G512 22 4 mcart
+G512 33 4 mcart
+C 11 4 auxmcart
+C 22 4 auxmcart
+C 33 4 auxmcart
+N 11 4 auxmcart
+N 22 4 auxmcart
+N 33 4 auxmcart

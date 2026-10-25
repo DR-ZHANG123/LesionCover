@@ -1,0 +1,29 @@
+name: lesion_coverage
+channels: [conda-forge]
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cu124
+      - torch==2.5.1
+      - torchvision==0.20.1
+      - timm==1.0.12
+      - huggingface_hub==0.26.2
+      - safetensors
+      - segmentation-models-pytorch==0.4.0
+      - opencv-python-headless==4.10.0.84
+      - scikit-image==0.24.0
+      - scikit-learn==1.5.2
+      - scipy==1.14.1
+      - pandas==2.2.3
+      - vtracer==0.6.15          # Fig. 1 图标矢量化
+      - svgpath2mpl==1.0.0
+      - numpy==1.26.4
+      - pyyaml==6.0.2
+      - matplotlib==3.9.2
+      - gdown==5.2.0
+      - pillow==11.0.0
+      - tqdm
+      - openpyxl
+      - python-docx==1.1.2
+      - adjustText==1.2.0
