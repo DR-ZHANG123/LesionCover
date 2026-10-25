@@ -1,4 +1,4 @@
-"""Supplementary Fig. S4：DeepDRiD 中被裁块输入误判为有 DR、而全局图判对的无 DR 眼。
+"""Supplementary Fig. S5：DeepDRiD 中被裁块输入误判为有 DR、而全局图判对的无 DR 眼。
 每例一张照片（同眼两张中病灶覆盖规则预测等级较高者），叠加病灶覆盖规则选出的四个裁块与其放大图；
 标题给出参考等级与两种输入（三个种子平均概率）的预测等级。只读 results/07_classify、05_selection、02_manifest。"""
 from __future__ import annotations
@@ -69,9 +69,9 @@ def main():
     for ax in axs.ravel():
         for sp in ax.spines.values():
             sp.set_linewidth(0.5)
-    save_source(pd.DataFrame(rows), ROOT, "FigS4", "examples")
-    fig.savefig(ROOT / "figures" / "FigS4.pdf", bbox_inches="tight", pad_inches=0.03)
-    fig.savefig(ROOT / "figures" / "FigS4.png", bbox_inches="tight", pad_inches=0.03, dpi=600)
+    save_source(pd.DataFrame(rows), ROOT, "FigS5", "examples")
+    fig.savefig(ROOT / "figures" / "FigS5.pdf", bbox_inches="tight", pad_inches=0.03)
+    fig.savefig(ROOT / "figures" / "FigS5.png", bbox_inches="tight", pad_inches=0.03, dpi=600)
     plt.close(fig)
 
 

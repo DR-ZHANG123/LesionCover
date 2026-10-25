@@ -1,6 +1,9 @@
 /data/
 /results/
-/figures/
+/figures/*
+!/figures/source_data/
+/figures/source_data/*
+!/figures/source_data/icons_healthicons/
 /logs/
 __pycache__/
 *.pt

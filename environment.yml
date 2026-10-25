@@ -16,7 +16,6 @@ dependencies:
       - scikit-learn==1.5.2
       - scipy==1.14.1
       - pandas==2.2.3
-      - vtracer==0.6.15          # Fig. 1 图标矢量化
       - svgpath2mpl==1.0.0
       - numpy==1.26.4
       - pyyaml==6.0.2

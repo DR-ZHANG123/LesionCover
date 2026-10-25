@@ -54,6 +54,8 @@ STAGES=(
   "08j_capacity|08j_capacity|python scripts/stages/08j_capacity.py"
   "08k_occlusion|08k_occlusion|python scripts/stages/08k_occlusion.py"
   "08l_screening|08l_screening|python scripts/stages/08l_screening.py"
+  "07g_referable_scores|07g_referable_scores|python scripts/stages/07g_referable_scores.py --tags G512_s{11,22,33} G1024_s{11,22,33} N_k4_s{11,22,33}_aux D_k4_s{11,22,33}_aux C_k4_s{11,22,33}_aux"
+  "08m_referable_roc|08m_referable_roc|python scripts/stages/08m_referable_roc.py"
   "09_cost|09_cost|python scripts/stages/09_cost.py"
 )
 
