@@ -135,6 +135,14 @@ def main():
     arrow(ax, 102.5, yb + 19, 106.0, yb + 19)
     draw_icon(ax, "grade_report", 106.5, yb + 13, 12)
     ax.text(112.5, yb + 12, "Grade 0–4", ha="center", va="top", fontsize=6.2)
+    # 训练时的辅助裁块头与损失（只在训练中使用）
+    ax.add_patch(FancyBboxPatch((88, yb - 2.5), 16, 9, boxstyle="round,pad=0,rounding_size=1.2", lw=0.7, ec=GREY,
+                                fc="#FFFFFF", ls=(0, (3, 2))))
+    ax.text(96, yb + 2, "Crop-only\nhead", ha="center", va="center", fontsize=5.8, linespacing=1.15)
+    arrow(ax, 82.5, yb + 5, 87.5, yb + 2)
+    aux_w = load_config()["classifier"]["crop_aux_weight"]
+    ax.text(105.5, yb + 2, "Training loss\n$\\mathcal{L}=\\mathrm{CE}_{\\mathrm{grade}}$\n$+\\," + f"{aux_w:g}" + "\\,\\mathrm{CE}_{\\mathrm{crops}}$",
+            ha="left", va="center", fontsize=5.6, linespacing=1.25)
 
     # ---------------- c：选择原理
     yc = 60.0
