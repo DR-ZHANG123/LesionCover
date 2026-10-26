@@ -98,7 +98,7 @@ def main():
               [Patch(facecolor="white", edgecolor="#444444", hatch="////", label="DDR + APTOS")])
     axc = fig.add_subplot(gs[1, 0])
     rate_panel(axc, fp, ext, cells, "value", "lo", "hi", marker_df=fpg)
-    axc.set_ylabel("No DR graded as DR (%)\nfinal grader"); axc.set_ylim(0, ymax)
+    axc.set_ylabel("No DR graded as DR (%)\nglobal view with crops"); axc.set_ylim(0, ymax)
     axc.legend(handles=legend + [Line2D([], [], marker="o", ls="", mfc="white", mec="#222222", ms=2.6, label="Global view")],
                fontsize=5.6, frameon=False, loc="upper left", ncol=3, columnspacing=0.6, handlelength=1.2)
     save_source(pd.concat([fp, fpg]), ROOT, "Fig6", "c_healthy_final_grader")
