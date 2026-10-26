@@ -21,6 +21,7 @@ sys.path.insert(0, str(ROOT / "scripts" / "figures"))
 sys.path.insert(0, str(ROOT))
 from figstyle import LESION_COLORS, LESION_LABELS, METHOD_COLORS, MM, apply_style, save_fig, save_source  # noqa: E402
 from Fig2_coverage import pick_example  # noqa: E402
+from fig1_parts import draw_network, example_outputs, pick_thumbnail, round_thumb  # noqa: E402
 from vector_icons import draw_icon  # noqa: E402
 
 W, H = 174.0, 157.0
@@ -110,39 +111,27 @@ def main():
                                CROP * f / n * s, fill=False, lw=1.0, ec=METHOD_COLORS["C"], zorder=3))
     caption(ax, 136 + s / 2, ya + s + 1.5, "Four crops chosen to\ncover distinct lesions")
 
-    # ---------------- b：分级网络
+    # ---------------- b：分级网络（结构示意；概率与注意力为示例照片三个覆盖模型的平均输出）
     yb = 60.0
     ax.text(1.5, 107.0, "b", fontsize=11, fontweight="bold", va="top")
     g = cv2.resize(canon, (200, 200), interpolation=cv2.INTER_AREA)
-    image(ax, g, 6, yb + 22, 20)
-    caption(ax, 16, yb + 43, "Global view\n512 × 512")
+    image(ax, g, 5, yb + 22, 20)
+    caption(ax, 15, yb + 43, "Global view\n512 × 512")
     t = 9.6
     for i, (x, y) in enumerate(sel):
         tile = cv2.resize(canon[y:y + CROP, x:x + CROP], (140, 140), interpolation=cv2.INTER_AREA)
-        image(ax, tile, 6 + (i % 2) * (t + 0.8), yb + 1 + (1 - i // 2) * (t + 0.8), t, edge=METHOD_COLORS["C"], lw=0.8)
-    caption(ax, 16, yb - 5.0, "Four crops 384 × 384")
-    draw_icon(ax, "encoder", 32, yb + 13, 22)
-    ax.text(43, yb + 12, "Shared ConvNeXt\nencoder", ha="center", va="top", fontsize=6.2, linespacing=1.2)
-    arrow(ax, 27, yb + 32, 31.5, yb + 27)
-    arrow(ax, 27, yb + 11, 31.5, yb + 18)
-    box(ax, 61, yb + 1, 21, 16, "Gated\nattention\npooling", fs=6.3)
-    box(ax, 61, yb + 24, 21, 12, "Global\nfeature", fs=6.3)
-    arrow(ax, 54.5, yb + 20, 60.5, yb + 10)
-    arrow(ax, 54.5, yb + 27, 60.5, yb + 30)
-    box(ax, 88, yb + 12, 14, 14, "Concatenate\n+ linear", fs=6.0)
-    arrow(ax, 82.5, yb + 9, 87.5, yb + 16)
-    arrow(ax, 82.5, yb + 30, 87.5, yb + 22)
-    arrow(ax, 102.5, yb + 19, 106.0, yb + 19)
-    draw_icon(ax, "grade_report", 106.5, yb + 13, 12)
-    ax.text(112.5, yb + 12, "Grade 0–4", ha="center", va="top", fontsize=6.2)
-    # 训练时的辅助裁块头与损失（只在训练中使用）
-    ax.add_patch(FancyBboxPatch((88, yb - 2.5), 16, 9, boxstyle="round,pad=0,rounding_size=1.2", lw=0.7, ec=GREY,
-                                fc="#FFFFFF", ls=(0, (3, 2))))
-    ax.text(96, yb + 2, "Crop-only\nhead", ha="center", va="center", fontsize=5.8, linespacing=1.15)
-    arrow(ax, 82.5, yb + 5, 87.5, yb + 2)
-    aux_w = load_config()["classifier"]["crop_aux_weight"]
-    ax.text(105.5, yb + 2, "Training loss\n$\\mathcal{L}=\\mathrm{CE}_{\\mathrm{grade}}$\n$+\\," + f"{aux_w:g}" + "\\,\\mathrm{CE}_{\\mathrm{crops}}$",
-            ha="left", va="center", fontsize=5.6, linespacing=1.25)
+        image(ax, tile, 5 + (i % 2) * (t + 0.8), yb + 1 + (1 - i // 2) * (t + 0.8), t, edge=METHOD_COLORS["C"], lw=0.8)
+    caption(ax, 15, yb - 5.0, "Four crops 384 × 384")
+    draw_icon(ax, "encoder", 28.5, yb + 15, 17)
+    ax.text(37.0, yb + 13.6, "Shared\nencoder", ha="center", va="top", fontsize=6.0, linespacing=1.15)
+    arrow(ax, 25.8, yb + 32, 28.6, yb + 27)
+    arrow(ax, 25.8, yb + 11, 28.6, yb + 18)
+    out = example_outputs(ROOT, key)
+    draw_network(ax, yb, out, load_config()["classifier"]["crop_aux_weight"], x0=46.5)
+    save_source(pd.DataFrame({"grade": range(5), "p": out["p"], "p_crop": out["p_crop"]}).assign(image_key=key),
+                ROOT, "Fig1", "b_grade_probabilities")
+    save_source(pd.DataFrame({"crop": range(1, 5), "attention": out["attn"]}).assign(image_key=key), ROOT, "Fig1",
+                "b_attention")
 
     # ---------------- c：选择原理
     yc = 60.0
@@ -186,14 +175,19 @@ def main():
     ax.text(94.5, ty, "External test cohorts", fontsize=6.6, fontweight="bold", va="center")
     tiles = [("DeepDRiD", cohort["drid_eyes"], "eyes"), ("IDRiD", cohort["idrid"], "photographs"),
              ("Messidor-2", cohort["mes"], "photographs"), ("EyePACS", cohort["eyp"], "photographs")]
-    tw, gap, t0, th = 20.6, 1.4, 86.0, 13.5
-    tb = by + bh / 2 - th / 2                                  # 卡片与分区条垂直居中对齐
-    for k, (nm, n_, unit) in enumerate(tiles):
+    tw, gap, t0, s_ = 20.6, 1.4, 86.0, 11.0
+    roles = ["deepdrid", "idrid", "messidor2", "eyepacs"]
+    thumbs = []
+    for k, ((nm, n_, unit), role) in enumerate(zip(tiles, roles)):   # 每个队列一张代表性照片（相机差异一目了然）
         tx = t0 + k * (tw + gap)
-        ax.add_patch(FancyBboxPatch((tx, tb), tw, th, boxstyle="round,pad=0,rounding_size=1.2", lw=0.6, ec=GREY, fc="#F7F7F7"))
-        ax.text(tx + tw / 2, tb + th - 3.0, nm, ha="center", va="center", fontsize=6.2, fontweight="bold")
-        ax.text(tx + tw / 2, tb + th / 2 - 1.0, f"{n_:,}", ha="center", va="center", fontsize=6.4)
-        ax.text(tx + tw / 2, tb + 2.6, unit, ha="center", va="center", fontsize=5.4, color="#555555")
+        tk = pick_thumbnail(ROOT, man, role)
+        cy = by + bh / 2 + 1.5
+        ax.imshow(round_thumb(ROOT, tk), extent=(tx + (tw - s_) / 2, tx + (tw + s_) / 2, cy - s_ / 2, cy + s_ / 2),
+                  interpolation="lanczos", zorder=2)
+        ax.text(tx + tw / 2, cy - s_ / 2 - 0.5, nm, ha="center", va="top", fontsize=6.2, fontweight="bold")
+        ax.text(tx + tw / 2, cy - s_ / 2 - 3.1, f"{n_:,} {unit}", ha="center", va="top", fontsize=5.6, color="#444444")
+        thumbs.append({"cohort": nm, "image_key": tk})
+    save_source(pd.DataFrame(thumbs), ROOT, "Fig1", "d_thumbnails")
     ax.plot([3, 172.6], [20.5, 20.5], color="#D0D0D0", lw=0.5)
     items = [("magnifier", "Lesion retention"), ("eraser", "Microaneurysm removal"),
              ("stethoscope", "Screening accuracy"), ("encoder", "Encoder and cameras")]
