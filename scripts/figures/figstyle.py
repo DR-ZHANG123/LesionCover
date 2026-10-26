@@ -22,7 +22,7 @@ METHOD_LABELS = {"G512": "Global 512 only", "G1024": "Global 1024 only", "U": "F
                  "R": "Random crops", "T": "Heatmap ranking", "N": "Lesion score + NMS",
                  "D": "Lesion score + DPP", "C": "Lesion coverage", "Cmass": "Coverage, area-weighted",
                  "S": "Lesion score top-K"}
-LESION_LABELS = {"MA": "Microaneurysm", "HE": "Haemorrhage", "EX": "Hard exudate", "SE": "Soft exudate"}
+LESION_LABELS = {"MA": "Microaneurysm", "HE": "Hemorrhage", "EX": "Hard exudate", "SE": "Soft exudate"}
 LESION_COLORS = {"MA": "#D62728", "HE": "#8C2D04", "EX": "#E6AB02", "SE": "#1F78B4"}
 
 

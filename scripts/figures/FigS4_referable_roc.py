@@ -1,6 +1,6 @@
 """Supplementary Fig. S4：可转诊 DR（≥2 级）的 ROC 曲线，以三个模型集成的 P(≥2 级) 为评分；每个队列一格，
 全局 512、DPP 与病灶覆盖裁块三条曲线，圆点为各输入以最可能等级判定时的工作点（results/08l_screening），
-图例给出 AUROC（results/08m_referable_roc）。只读结果表。"""
+图例给出 AUC（results/08m_referable_roc）。只读结果表。"""
 from __future__ import annotations
 
 import sys
@@ -41,7 +41,7 @@ def main():
                         "op_fpr": 1 - m.ref_spec, "op_tpr": m.ref_sens})
         txt = "\n".join(f"{INPUTS[i_].split()[0]} {auc[(auc.cohort == co) & (auc.input == i_)].auroc.iloc[0]:.3f}"
                         for i_ in INPUTS)
-        ax.text(0.97, 0.05, "AUROC\n" + txt, transform=ax.transAxes, ha="right", va="bottom", fontsize=5.6,
+        ax.text(0.97, 0.05, "AUC\n" + txt, transform=ax.transAxes, ha="right", va="bottom", fontsize=5.6,
                 linespacing=1.25)
         ax.set_xlim(-0.02, 1.0); ax.set_ylim(0, 1.02)
         ax.set_xticks([0, 0.5, 1]); ax.set_yticks([0, 0.5, 1])
