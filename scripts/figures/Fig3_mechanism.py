@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts" / "figures"))
 from figstyle import METHOD_COLORS, W2, apply_style, panel_label, save_fig, save_source  # noqa: E402
 
-SHORT = {"U": "Quadrants", "R": "Random", "T": "Heatmap", "N": "NMS", "D": "DPP", "C": "Coverage"}
+SHORT = {"U": "Quadrants", "R": "Random", "T": "Heatmap", "N": "NMS", "D": "DPP", "C": "LesionCover"}
 BINS = ["0", "1", "2", "3-4", "≥5"]
 CROP = 384
 
@@ -55,8 +55,9 @@ def main():
     for x, y in cen:
         axa.add_patch(Circle((x * f, y * f), 6, fill=False, lw=0.6, ec="#7CFC00"))
     axa.set_xticks([]); axa.set_yticks([])
-    axa.set_title(f"Reference grade: mild. Global 512 view: no DR (P = {case.global_p0:.2f});\n"
-                  f"with coverage crops: mild (P = {case.cover_p1:.2f})", fontsize=6.3, pad=3)
+    fmt = lambda v: "> 0.99" if v >= 0.995 else f"{v:.2f}"                       # 舍入成 1.00 时写作 > 0.99
+    axa.set_title(f"Reference grade: mild. Global 512 view: no DR (probability {fmt(case.global_p0)});\n"
+                  f"with LesionCover crops: mild (probability {fmt(case.cover_p1)})", fontsize=6.3, pad=3)
     panel_label(axa, "c")
 
     axb = fig.add_subplot(gs[1, 1])
@@ -83,7 +84,7 @@ def main():
                  bbox={"boxstyle": "round,pad=0.15", "fc": "black", "ec": "none", "alpha": 0.55})
         rows.append({"crop": j, "x0": x, "y0": y, "attention": att[j], "annotated_MA_inside": len(inside)})
     axb.set_xticks([]); axb.set_yticks([]); axb.axis("off")
-    axb.set_title("Coverage crops at full resolution (circles, annotated microaneurysms)", fontsize=6.3, pad=3)
+    axb.set_title("LesionCover crops at full resolution (circles, annotated microaneurysms)", fontsize=6.3, pad=3)
     save_source(pd.DataFrame(rows).assign(image_key=key, global_p0=case.global_p0, cover_p1=case.cover_p1), ROOT,
                 "Fig3", "cd_case")
     panel_label(axb, "d")

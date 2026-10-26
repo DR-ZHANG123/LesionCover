@@ -6,7 +6,7 @@
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"; cd "$ROOT"
 Q="$1"; GPU="$2"; MIN_FREE_MB="${MIN_FREE_MB:-23000}"
-source "${CONDA_BASE:-$(conda info --base)}/etc/profile.d/conda.sh"; conda activate lesion_coverage
+source "${CONDA_BASE:-$(conda info --base)}/etc/profile.d/conda.sh"; conda activate lesioncover
 mkdir -p logs/classify
 while true; do
   until [ "$(nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits -i "$GPU")" -ge "$MIN_FREE_MB" ]; do sleep 60; done

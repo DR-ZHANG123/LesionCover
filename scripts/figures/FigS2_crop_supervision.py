@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT / "scripts" / "figures"))
 from figstyle import METHOD_COLORS, W2, apply_style, panel_label, save_fig, save_source  # noqa: E402
 
 RULES = ["U", "R", "T", "N", "D", "C"]
-SHORT = {"U": "Quadrants", "R": "Random", "T": "Heatmap", "N": "NMS", "D": "DPP", "C": "Coverage"}
+SHORT = {"U": "Quadrants", "R": "Random", "T": "Heatmap", "N": "NMS", "D": "DPP", "C": "LesionCover"}
 
 
 def main():

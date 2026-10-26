@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts" / "figures"))
 from figstyle import METHOD_COLORS, W15, apply_style, save_fig, save_source  # noqa: E402
 
-SHORT = {"U": "Quadrants", "R": "Random", "T": "Heatmap", "N": "NMS", "D": "DPP", "C": "Coverage"}
+SHORT = {"U": "Quadrants", "R": "Random", "T": "Heatmap", "N": "NMS", "D": "DPP", "C": "LesionCover"}
 
 
 def main():

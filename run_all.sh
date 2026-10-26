@@ -2,7 +2,7 @@
 # 总控：按依赖顺序运行全部分析 stage 与出图脚本。
 # 用法：bash run_all.sh [--resume|--force] [--skip=stageA,stageB]
 #   --resume（默认）：results/<stage>/PROVENANCE.json 已存在则跳过该 stage
-# 环境：conda 环境 lesion_coverage（environment.yml）；GPU 由 CUDA_VISIBLE_DEVICES 指定（默认 0）。
+# 环境：conda 环境 lesioncover（environment.yml）；GPU 由 CUDA_VISIBLE_DEVICES 指定（默认 0）。
 # 07_classify 的全部配置（方法 × 种子 × K）列在 config/grading_runs_all.txt（方法 种子 K [训练方式]），可用 scripts/run_queue.sh 多 lane 并行。
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -18,7 +18,7 @@ done
 CONDA_BASE="${CONDA_BASE:-$(conda info --base 2>/dev/null || echo "$HOME/miniconda3")}"
 export CONDA_BASE
 source "$CONDA_BASE/etc/profile.d/conda.sh"
-conda activate lesion_coverage
+conda activate lesioncover
 mkdir -p logs
 export CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}
 

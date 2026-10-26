@@ -58,7 +58,7 @@ def main():
         cr = crops[crops.image_key == k].sort_values("slot")[["x0", "y0"]].to_numpy()
         for x, y in cr:
             ax.add_patch(Rectangle((x * f, y * f), 384 * f, 384 * f, fill=False, lw=1.0, ec=METHOD_COLORS["C"]))
-        ax.set_title(f"Reference 0; global view {r.pg};\nwith coverage crops {r.pc}", fontsize=6.3, pad=2)
+        ax.set_title(f"Reference 0; global view {r.pg};\nwith LesionCover crops {r.pc}", fontsize=6.3, pad=2)
         tiles = [cv2.resize(img[y:y + 384, x:x + 384], (192, 192), interpolation=cv2.INTER_AREA) for x, y in cr]
         mosaic = np.vstack([np.hstack(tiles[:2]), np.hstack(tiles[2:])]) if len(tiles) == 4 else np.hstack(tiles)
         axs[1, j].imshow(mosaic); axs[1, j].set_xticks([]); axs[1, j].set_yticks([])

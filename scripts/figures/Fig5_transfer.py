@@ -17,7 +17,7 @@ from figstyle import METHOD_COLORS, W2, apply_style, panel_label, save_fig, save
 
 RULES = ["U", "R", "T", "S", "N", "D", "Cmass", "C"]
 SHORT = {"U": "Quadrants", "R": "Random", "T": "Heatmap", "S": "Score top-K", "N": "NMS", "D": "DPP",
-         "Cmass": "Area-weighted", "C": "Coverage"}
+         "Cmass": "Area-weighted", "C": "LesionCover"}
 COH_ALL = {"ddr_test": ("DDR test", "o", "#222222"), "deepdrid": ("DeepDRiD", "s", "#4C72B0"),
            "idrid": ("IDRiD", "^", "#DD8452"), "messidor2": ("Messidor-2", "D", "#55A868"),
            "eyepacs": ("EyePACS", "v", "#8172B3")}
@@ -40,7 +40,7 @@ def main():
         a.errorbar(x, t.called_dr_pct, yerr=[t.called_dr_pct - t.lo, t.hi - t.called_dr_pct], fmt=f"{mk}-", ms=3.2,
                    lw=0.9, color=col, elinewidth=0.5, capsize=1.2, label=lab)
     a.set_xticks(range(len(BINS))); a.set_xticklabels(BINS)
-    a.set_xlabel("Predicted microaneurysms inside the coverage crops")
+    a.set_xlabel("Predicted microaneurysms inside the LesionCover crops")
     a.set_ylabel("No-DR photographs graded\nas DR from crops (%)"); a.set_ylim(0, 122); a.set_yticks(range(0, 101, 20))
     a.legend(fontsize=6, frameon=False, loc="upper center", ncol=3, columnspacing=0.8, handletextpad=0.3)   # 顶部留出图例带
     save_source(hb[hb.grade == 0], ROOT, "Fig5", "a_healthy_spots"); panel_label(a, "a")

@@ -1,6 +1,7 @@
-# Lesion-coverage crop selection for diabetic retinopathy grading
+# LesionCover
 
-Code for choosing a few full-resolution crops of a colour fundus photograph so that they cover as many distinct
+LesionCover is a lesion-coverage crop selection rule for diabetic retinopathy grading. This repository holds the code for
+choosing a few full-resolution crops of a color fundus photograph so that they cover as many distinct
 predicted lesions as possible, and for grading diabetic retinopathy from a 512-pixel global view plus four 384-pixel crops.
 A lesion segmenter (U-Net, ResNet-18) supplies calibrated lesion maps; crops are chosen by greedy coverage of lesion
 components and compared with heatmap ranking, non-maximum suppression, a determinantal point process and fixed or random
@@ -14,7 +15,7 @@ APTOS 2019 (additional training photographs in one setting). `scripts/stages/00_
 ## Usage
 
 ```bash
-conda env create -f environment.yml && conda activate lesion_coverage
+conda env create -f environment.yml && conda activate lesioncover
 bash run_all.sh                     # all stages in order, then the figures; --force reruns, --skip=a,b skips stages
 bash scripts/run_queue.sh config/grading_runs_all.txt <gpu>   # grading models in parallel, one lane per GPU
 ```

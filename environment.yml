@@ -1,4 +1,4 @@
-name: lesion_coverage
+name: lesioncover
 channels: [conda-forge]
 dependencies:
   - python=3.11

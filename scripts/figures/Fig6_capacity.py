@@ -43,7 +43,7 @@ def advantage_panel(ax, con, train, encs, cohs, ylim):
     ax.plot([-0.5, len(cohs) - 0.5], [0, 0], color="#444444", lw=0.6, zorder=1)
     ax.set_xticks(range(len(cohs))); ax.set_xticklabels([c for _, c in cohs])
     ax.set_xlim(-0.5, len(cohs) - 0.5); ax.set_ylim(*ylim)
-    ax.set_ylabel("$\\kappa$, coverage crops\nminus global view")
+    ax.set_ylabel("$\\kappa$, LesionCover crops\nminus global view")
     return t[t.encoder.isin([e for e, _ in encs])]
 
 
@@ -106,7 +106,7 @@ def main():
 
     axd = fig.add_subplot(gs[1, 1])
     rate_panel(axd, hcx.rename(columns={"called_dr": "value"}), ext, cells, "value", "lo", "hi")
-    axd.set_ylabel("No DR graded as DR (%)\nfrom coverage crops alone"); axd.set_ylim(0, ymax)
+    axd.set_ylabel("No DR graded as DR (%)\nfrom LesionCover crops alone"); axd.set_ylim(0, ymax)
     axd.legend(handles=legend, fontsize=5.6, frameon=False, loc="upper left", ncol=2, columnspacing=0.6, handlelength=1.2)
     save_source(hcx, ROOT, "Fig6", "d_healthy_crops_alone")
     panel_label(axd, "d")

@@ -16,7 +16,7 @@ from figstyle import METHOD_COLORS, W2, apply_style, panel_label, save_fig, save
 
 COHORTS = {"ddr_test": "DDR test", "deepdrid": "DeepDRiD (eyes)", "idrid": "IDRiD", "messidor2": "Messidor-2",
            "eyepacs": "EyePACS"}
-INPUTS = {"G512": "Global view", "D": "DPP crops", "C": "Coverage crops"}
+INPUTS = {"G512": "Global view", "D": "DPP crops", "C": "LesionCover crops"}
 
 
 def main():

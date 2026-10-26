@@ -103,7 +103,7 @@ def main():
         ax.text(xx + 2, yy, LESION_LABELS[les], va="center", fontsize=6.0)
     arrow(ax, 110.5, ya + s / 2, 135.5, ya + s / 2)
     draw_icon(ax, "magnifier", 117.5, ya + s / 2 + 1.5, 11)
-    ax.text(123, ya + s / 2 - 1.5, "Greedy coverage\nof lesion\ncomponents\n(K = 4)", ha="center", va="top", fontsize=6.0,
+    ax.text(123, ya + s / 2 - 1.5, "LesionCover:\ngreedy coverage\nof lesion\ncomponents (K = 4)", ha="center", va="top", fontsize=6.0,
             linespacing=1.2)
     image(ax, small, 136, ya, s)
     for x, y in sel:
@@ -139,7 +139,7 @@ def main():
     lesions = [("HE", 0.36, 0.55, 0.14), ("HE", 0.47, 0.44, 0.06)] + \
               [("MA", x, y, 0.028) for x, y in [(0.73, 0.30), (0.80, 0.38), (0.70, 0.20), (0.22, 0.20), (0.62, 0.80), (0.82, 0.70)]]
     panels = [("Heatmap\nranking", [(0.18, 0.37, 0.34), (0.30, 0.28, 0.34)], METHOD_COLORS["T"]),
-              ("Lesion\ncoverage", [(0.19, 0.38, 0.34), (0.58, 0.12, 0.34)], METHOD_COLORS["C"])]
+              ("LesionCover", [(0.19, 0.38, 0.34), (0.58, 0.12, 0.34)], METHOD_COLORS["C"])]
     for j, (title, wins, col) in enumerate(panels):
         x0, d = 127 + j * 24, 21.0
         y0 = yc + 14

@@ -19,7 +19,7 @@ from figstyle import METHOD_COLORS, W2, align_panel_labels, apply_style, panel_l
 ORDER = ["G512", "G1024", "U", "R", "T", "N", "D", "C"]
 KEY = {m: (m if m.startswith("G") else f"{m}_k4_aux") for m in ORDER}
 SHORT = {"G512": "Global 512", "G1024": "Global 1024", "U": "Quadrants", "R": "Random", "T": "Heatmap",
-         "N": "NMS", "D": "DPP", "C": "Coverage"}
+         "N": "NMS", "D": "DPP", "C": "LesionCover"}
 SETS = [("ddr_test", "DDR test"), ("deepdrid_eye", "DeepDRiD"), ("idrid", "IDRiD"), ("messidor2", "Messidor-2"),
         ("eyepacs", "EyePACS")]
 EXT = {"deepdrid_eye": ("DeepDRiD", "s"), "idrid": ("IDRiD", "^"), "messidor2": ("Messidor-2", "D"), "eyepacs": ("EyePACS", "v")}

@@ -128,7 +128,7 @@ def main():
     save_source(pd.DataFrame(rows), ROOT, "Fig2", "d_differences")
     axd.plot([0, 0], [-0.6, len(labs) - 1 + 0.42], color="#888888", lw=0.6, ls="--")   # 零线止于图例带之下
     axd.set_yticks(range(len(labs))[::-1]); axd.set_yticklabels(names)
-    axd.set_xlabel("Coverage rule minus\nNMS or DPP (points)")
+    axd.set_xlabel("LesionCover minus\nNMS or DPP (points)")
     axd.legend(handles=[Line2D([], [], ls="", marker="o", ms=3, mfc="#555555", mec="#555555", label="DDR"),
                         Line2D([], [], ls="", marker="s", ms=3, mfc="white", mec="#555555", label="IDRiD")],
                fontsize=5.6, frameon=False, loc="upper right", ncol=2, handletextpad=0.2, columnspacing=0.8,
