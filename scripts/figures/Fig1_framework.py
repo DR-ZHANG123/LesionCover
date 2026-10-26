@@ -163,32 +163,44 @@ def main():
     ax.text(147.5, yc + 8.0, "Each lesion counts once:", ha="center", fontsize=6.2)
     ax.text(147.5, yc + 1.5, r"$F(S)=\sum_{\ell}\, q_\ell \max_{j\in S}\, a_{\ell j}$", ha="center", fontsize=7)
 
-    # ---------------- d：研究设计
-    yd = -6.0
+    # ---------------- d：研究设计（图形化：分区比例条、外部队列卡片、四项分析图标；细节在图注与表 1）
     ax.text(1.5, 51.0, "d", fontsize=11, fontweight="bold", va="top")
-    ax.add_patch(FancyBboxPatch((3, yd + 29), 70, 23, boxstyle="round,pad=0,rounding_size=1.6", lw=0.6, ec=GREY, fc="#F7F7F7"))
-    draw_icon(ax, "hospital", 5, yd + 32, 14)
-    ax.text(21, yd + 49.5, "Development cohort (DDR)", fontsize=6.6, fontweight="bold", va="top")
-    ax.text(21, yd + 44.5, f"{cohort['ddr_train']:,} training, {cohort['ddr_dev']:,} development\n"
-                           f"and {cohort['ddr_test']:,} test photographs\n"
-                           f"Lesion masks: {cohort['seg_train']}, {cohort['seg_dev']} and {cohort['seg_test']}",
-            fontsize=6.0, va="top", linespacing=1.3)
-    arrow(ax, 74, yd + 39, 85, yd + 39)
-    ax.text(79.5, yd + 40.5, "trained\ngraders", ha="center", va="bottom", fontsize=5.8, linespacing=1.1)
-    ax.add_patch(FancyBboxPatch((86, yd + 29), 85, 23, boxstyle="round,pad=0,rounding_size=1.6", lw=0.6, ec=GREY, fc="#F7F7F7"))
-    draw_icon(ax, "globe", 88, yd + 32, 14)
-    ax.text(104, yd + 49.5, "Four external cohorts", fontsize=6.6, fontweight="bold", va="top")
-    ax.text(104, yd + 44.5, f"DeepDRiD: {cohort['drid_eyes']} eyes of {cohort['drid_patients']} patients\n"
-                            f"IDRiD: {cohort['idrid']} photographs (+{cohort['idrid_seg']} with lesion masks)\n"
-                            f"Messidor-2: {cohort['mes']:,} photographs, {cohort['mes_exams']} examinations\n"
-                            f"EyePACS: {cohort['eyp']:,} photographs of {cohort['eyp_patients']:,} patients",
-            fontsize=6.0, va="top", linespacing=1.3)
-    items = [("magnifier", "Lesion retention\n(annotated masks)"), ("eraser", "Microaneurysm removal\n(fixed grader)"),
-             ("stethoscope", "Screening measures\n(referable, mild, no DR)"), ("encoder", "Encoder capacity and\ntraining cameras")]
+    ty = 44.0                                                   # 两个区块标题的基线
+    draw_icon(ax, "hospital", 3, ty - 3.6, 7.2)
+    ax.text(11.5, ty, "DDR development cohort", fontsize=6.6, fontweight="bold", va="center")
+    parts = [("Training", cohort["ddr_train"], "#2B4C7E", "white"), ("Development", cohort["ddr_dev"], "#2A9D8F", "white"),
+             ("Test", cohort["ddr_test"], "#E9C46A", "#222222")]
+    x, x1, by, bh = 3.0, 72.0, 31.0, 6.0
+    tot = sum(p[1] for p in parts)
+    for lab, n_, fc, tc in parts:
+        w_ = (x1 - 3.0) * n_ / tot
+        ax.add_patch(Rectangle((x, by), w_, bh, fc=fc, ec="white", lw=0.6))
+        ax.text(x + w_ / 2, by + bh / 2, f"{n_:,}", ha="center", va="center", fontsize=6.0, color=tc)
+        ax.text(x + w_ / 2, by - 1.2, lab, ha="center", va="top", fontsize=5.6, color="#444444")
+        x += w_
+    ax.text(3.0, by - 6.2, f"{cohort['seg_train'] + cohort['seg_dev'] + cohort['seg_test']} photographs with lesion masks",
+            fontsize=5.6, color="#444444", va="top")
+    arrow(ax, 74.0, by + bh / 2, 84.5, by + bh / 2)
+    ax.text(79.3, by + bh / 2 + 1.4, "applied\nunchanged", ha="center", va="bottom", fontsize=5.6, linespacing=1.1)
+    draw_icon(ax, "globe", 86, ty - 3.6, 7.2)
+    ax.text(94.5, ty, "External test cohorts", fontsize=6.6, fontweight="bold", va="center")
+    tiles = [("DeepDRiD", cohort["drid_eyes"], "eyes"), ("IDRiD", cohort["idrid"], "photographs"),
+             ("Messidor-2", cohort["mes"], "photographs"), ("EyePACS", cohort["eyp"], "photographs")]
+    tw, gap, t0, th = 20.6, 1.4, 86.0, 13.5
+    tb = by + bh / 2 - th / 2                                  # 卡片与分区条垂直居中对齐
+    for k, (nm, n_, unit) in enumerate(tiles):
+        tx = t0 + k * (tw + gap)
+        ax.add_patch(FancyBboxPatch((tx, tb), tw, th, boxstyle="round,pad=0,rounding_size=1.2", lw=0.6, ec=GREY, fc="#F7F7F7"))
+        ax.text(tx + tw / 2, tb + th - 3.0, nm, ha="center", va="center", fontsize=6.2, fontweight="bold")
+        ax.text(tx + tw / 2, tb + th / 2 - 1.0, f"{n_:,}", ha="center", va="center", fontsize=6.4)
+        ax.text(tx + tw / 2, tb + 2.6, unit, ha="center", va="center", fontsize=5.4, color="#555555")
+    ax.plot([3, 172.6], [20.5, 20.5], color="#D0D0D0", lw=0.5)
+    items = [("magnifier", "Lesion retention"), ("eraser", "Microaneurysm removal"),
+             ("stethoscope", "Screening accuracy"), ("encoder", "Encoder and cameras")]
     for k, (icon, label) in enumerate(items):
         x = 3 + k * 43
-        draw_icon(ax, icon, x, yd + 10, 13)
-        ax.text(x + 14.5, yd + 16.5, label, fontsize=6.0, va="center", linespacing=1.25)
+        draw_icon(ax, icon, x, 5.0, 11.5)
+        ax.text(x + 14.0, 10.75, label, fontsize=6.2, va="center")
     save_source(pd.DataFrame([cohort]), ROOT, "Fig1", "d_cohorts")
 
     save_source(pd.DataFrame(sel, columns=["x0_canon", "y0_canon"]).assign(image_key=key), ROOT, "Fig1", "a_crops")
