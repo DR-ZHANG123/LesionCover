@@ -56,6 +56,10 @@ STAGES=(
   "08l_screening|08l_screening|python scripts/stages/08l_screening.py"
   "07g_referable_scores|07g_referable_scores|python scripts/stages/07g_referable_scores.py --tags G512_s{11,22,33} G1024_s{11,22,33} N_k4_s{11,22,33}_aux D_k4_s{11,22,33}_aux C_k4_s{11,22,33}_aux"
   "08m_referable_roc|08m_referable_roc|python scripts/stages/08m_referable_roc.py"
+  "05d_camera_prior|05d_camera_prior|python scripts/stages/05d_camera_prior.py"
+  "07h_predict_camera|07h_predict_camera|python scripts/stages/07h_predict_camera.py --tags G512_s{11,22,33} N_k4_s{11,22,33}_aux D_k4_s{11,22,33}_aux C_k4_s{11,22,33}_aux"
+  "08n_camera_prior|08n_camera_prior|python scripts/stages/08n_camera_prior.py"
+  "08o_camera_spots|08o_camera_spots|python scripts/stages/08o_camera_spots.py"
   "09_cost|09_cost|python scripts/stages/09_cost.py"
 )
 

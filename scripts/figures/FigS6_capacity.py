@@ -1,4 +1,4 @@
-"""Fig. 6：编码器容量与训练相机多样性。全部为三个模型集成的统计量，区间为两层 bootstrap（评价单位 + 模型）。
+"""Fig. S6（补充图）：编码器容量与训练相机多样性。全部为三个模型集成的统计量，区间为两层 bootstrap（评价单位 + 模型）。
 a、b 病灶覆盖与全局 512 的 κ 之差（C − G512）按编码器（ConvNeXt-Tiny / Small / Base）与队列；a 只用 DDR 训练，b 加入 APTOS。
 c 融合模型（正式输出）把无 DR 的照片（DeepDRiD 为眼）判为 DR 的比例：病灶覆盖（柱）与全局 512（空心点），按训练设置与外部队列。
 d 辅助头只看病灶覆盖裁块时同一比例（机制分析），按训练设置与外部队列。
@@ -85,7 +85,7 @@ def main():
         ax.set_title(f"Trained on {title}", fontsize=7, pad=3)
         ax.legend(handles=[Line2D([], [], marker="o", ls="", color=ENC_COL[e], ms=3.4, label=lab) for e, lab in encs],
                   fontsize=6, frameon=False, loc="upper center", ncol=len(encs), handletextpad=0.2, columnspacing=0.8)
-        save_source(src, ROOT, "Fig6", f"{'ab'[k]}_advantage_{train}")
+        save_source(src, ROOT, "FigS6", f"{'ab'[k]}_advantage_{train}")
         panel_label(ax, "ab"[k])
 
     cells = [(tr, e) for tr, _ in TRAIN for e, _ in encs]
@@ -101,16 +101,16 @@ def main():
     axc.set_ylabel("No DR graded as DR (%)\nglobal view with crops"); axc.set_ylim(0, ymax)
     axc.legend(handles=legend + [Line2D([], [], marker="o", ls="", mfc="white", mec="#222222", ms=2.6, label="Global view")],
                fontsize=5.6, frameon=False, loc="upper left", ncol=3, columnspacing=0.6, handlelength=1.2)
-    save_source(pd.concat([fp, fpg]), ROOT, "Fig6", "c_healthy_final_grader")
+    save_source(pd.concat([fp, fpg]), ROOT, "FigS6", "c_healthy_final_grader")
     panel_label(axc, "c")
 
     axd = fig.add_subplot(gs[1, 1])
     rate_panel(axd, hcx.rename(columns={"called_dr": "value"}), ext, cells, "value", "lo", "hi")
     axd.set_ylabel("No DR graded as DR (%)\nfrom LesionCover crops alone"); axd.set_ylim(0, ymax)
     axd.legend(handles=legend, fontsize=5.6, frameon=False, loc="upper left", ncol=2, columnspacing=0.6, handlelength=1.2)
-    save_source(hcx, ROOT, "Fig6", "d_healthy_crops_alone")
+    save_source(hcx, ROOT, "FigS6", "d_healthy_crops_alone")
     panel_label(axd, "d")
-    save_fig(fig, ROOT, "Fig6")
+    save_fig(fig, ROOT, "FigS6")
 
 
 if __name__ == "__main__":

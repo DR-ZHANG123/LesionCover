@@ -103,3 +103,12 @@ occlusion:                     # 08k：固定已训练的分级器，遮挡裁�
   inpaint_radius: 5            # cv2.inpaint（Telea）半径
   ctrl_tries: 500              # 对照斑块随机放置的最大尝试次数
   batch_size: 16
+
+camera_prior:                  # 05d/07h/08n：同一队列（站点）无标签照片中反复出现在同一位置的预测病灶视为相机伪影
+  roles: [ddr_test, deepdrid, idrid, messidor2, eyepacs]   # 每个评价队列各自统计（只用照片，不用标签）
+  reference_roles: [ddr_dev, ddr_train]                     # 只用于报告 DDR 中预测病灶复现率的范围
+  radius: 4                    # 概率图格（768 坐标，= 8 canon 像素）：两分量中心相距 ≤radius 视为同一位置
+  threshold: 0.05              # 复现率阈值：同队列其他照片中同类分量落在同一位置的比例；DDR 训练与开发区任何预测病灶的最大值为 1.8%
+  dilate_px: 3                 # 修补掩膜外扩（canon 像素，同 occlusion）
+  inpaint_radius: 5            # cv2.inpaint（Telea）半径（同 occlusion）
+  methods: [N, D, C]           # 去掉复现分量后重新选裁块的规则（U 为固定布局，不受影响）

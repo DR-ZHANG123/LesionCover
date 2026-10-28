@@ -189,12 +189,15 @@ def main():
         thumbs.append({"cohort": nm, "image_key": tk})
     save_source(pd.DataFrame(thumbs), ROOT, "Fig1", "d_thumbnails")
     ax.plot([3, 172.6], [20.5, 20.5], color="#D0D0D0", lw=0.5)
-    items = [("magnifier", "Lesion retention"), ("eraser", "Microaneurysm removal"),
-             ("stethoscope", "Screening accuracy"), ("encoder", "Encoder and cameras")]
+    # 主线的四步：证据进入分级器 → 分级器依赖它 → 少漏轻度 DR → 新相机上去除复现斑点
+    items = [("magnifier", "1  Microaneurysms\n    reach the grader"), ("eraser", "2  The grader\n    relies on them"),
+             ("stethoscope", "3  Fewer missed\n    mild DR"), ("fundus_camera", "4  New cameras:\n    recurrent spots removed")]
     for k, (icon, label) in enumerate(items):
         x = 3 + k * 43
         draw_icon(ax, icon, x, 5.0, 11.5)
-        ax.text(x + 14.0, 10.75, label, fontsize=6.2, va="center")
+        ax.text(x + 13.5, 10.75, label, fontsize=6.0, va="center", linespacing=1.15)
+        if k < len(items) - 1:
+            arrow(ax, x + 36.5, 10.75, x + 41.5, 10.75)
     save_source(pd.DataFrame([cohort]), ROOT, "Fig1", "d_cohorts")
 
     save_source(pd.DataFrame(sel, columns=["x0_canon", "y0_canon"]).assign(image_key=key), ROOT, "Fig1", "a_crops")

@@ -1,4 +1,4 @@
-"""作图公共样式（期刊版式：单栏 84 mm、1.5 栏 129 mm、双栏 174 mm，最大高 234 mm；Arial 8 pt 起；矢量 PDF + 600 dpi PNG）。
+"""作图公共样式（单栏 84 mm、1.5 栏 129 mm、双栏 174 mm，最大高 234 mm；Arial 7–8 pt 起；矢量 PDF + 600 dpi PNG）。
 
 每个作图脚本只读 results/ 下的表，把面板输入写到 figures/source_data/<figure>_<panel>.tsv，再存 PDF/PNG。
 子图字母由 align_panel_labels 统一按行列对齐；overlap_report 检查文字与文字、文字与数据点的重叠。
@@ -22,7 +22,7 @@ METHOD_LABELS = {"G512": "Global 512 only", "G1024": "Global 1024 only", "U": "F
                  "R": "Random crops", "T": "Heatmap ranking", "N": "Lesion score + NMS",
                  "D": "Lesion score + DPP", "C": "LesionCover", "Cmass": "LesionCover, area-weighted",
                  "S": "Lesion score top-K"}
-LESION_LABELS = {"MA": "Microaneurysm", "HE": "Hemorrhage", "EX": "Hard exudate", "SE": "Soft exudate"}
+LESION_LABELS = {"MA": "Microaneurysm", "HE": "Haemorrhage", "EX": "Hard exudate", "SE": "Soft exudate"}
 LESION_COLORS = {"MA": "#D62728", "HE": "#8C2D04", "EX": "#E6AB02", "SE": "#1F78B4"}
 
 

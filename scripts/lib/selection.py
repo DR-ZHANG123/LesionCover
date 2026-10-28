@@ -194,15 +194,25 @@ def shift_threshold(tau: np.ndarray, delta: float) -> np.ndarray:
     return (1 / (1 + np.exp(-(np.log(t / (1 - t)) + delta)))).astype(np.float32)
 
 
+def subset(comps: Components, keep: np.ndarray) -> Components:
+    """只保留 keep 为真的分量（顺序不变）。"""
+    idx = np.flatnonzero(keep)
+    return Components(comps.q[idx], comps.mass[idx], comps.cls[idx], comps.centre[idx].reshape(-1, 2),
+                      [comps.px[i] for i in idx], [comps.py[i] for i in idx], [comps.pw[i] for i in idx])
+
+
 def select_all(prob: np.ndarray, fmask: np.ndarray, cfg: dict, k: int, rng: np.random.Generator,
                nms_thr: float, dpp_theta: float, tau, rho: float | None = None,
-               methods=("U", "R", "T", "N", "D", "C", "Cmass", "S")) -> dict:
-    """对一张图返回 {方法: (k,2) 左上角坐标（prob 坐标系）}。"""
+               methods=("U", "R", "T", "N", "D", "C", "Cmass", "S"), keep: np.ndarray | None = None) -> dict:
+    """对一张图返回 {方法: (k,2) 左上角坐标（prob 坐标系）}。keep：按 extract_components 顺序的布尔向量，
+    为假的分量（如相机复现的伪影）不进入候选库与任何得分。"""
     sc = cfg["selection"]
     scale = cfg["preprocess"]["canon_size"] / prob.shape[-1]
     c = int(round(sc["crop"] / scale))
     stride = int(round(sc["grid_stride"] / scale))
     comps = extract_components(prob, tau, sc["comp_min_pixels"])
+    if keep is not None:
+        comps = subset(comps, keep)
     cand = build_candidates(fmask, comps, c, stride, sc["min_fundus_frac"], sc["max_comp_centres"])
     fb = uniform_layout(prob.shape[-1], c, max(k, 4))
     A = coverage_matrix(comps, cand, c, True)

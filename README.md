@@ -5,7 +5,10 @@ choosing a few full-resolution crops of a color fundus photograph so that they c
 predicted lesions as possible, and for grading diabetic retinopathy from a 512-pixel global view plus four 384-pixel crops.
 A lesion segmenter (U-Net, ResNet-18) supplies calibrated lesion maps; crops are chosen by greedy coverage of lesion
 components and compared with heatmap ranking, non-maximum suppression, a determinantal point process and fixed or random
-crops; a ConvNeXt grader with gated attention pooling predicts the five-level grade.
+crops; a ConvNeXt grader with gated attention pooling predicts the five-level grade. On photographs from other cameras,
+predicted lesions that recur at the same position across a camera's unlabelled photographs (camera spots such as lens
+dust) are left out of the coverage objective and inpainted before grading (`scripts/stages/05d_camera_prior.py`,
+`07h_predict_camera.py`), without labels and with the trained networks unchanged.
 
 ## Data
 
