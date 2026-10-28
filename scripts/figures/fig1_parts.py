@@ -106,7 +106,7 @@ def draw_network(ax, yb: float, out: dict, aux_w: float, x0: float = 47.0) -> No
         ax.add_patch(Rectangle((px + 1.0 + k * 2.4, py + 1.2), 1.6, 5.0 * out["p_crop"][k] + 0.05, fc=GRADE_COLORS[k],
                                ec="none", zorder=4))
     ax.plot([px + 0.6, px + 13.0], [py + 1.2, py + 1.2], color=GREY, lw=0.4, zorder=4)
-    ax.text(px + 6.6, py - 2.0, r"$\mathbf{p}^{\mathrm{crop}}$ (training only)", ha="center", va="top", fontsize=5.6, color="#444444")
+    ax.text(px + 6.6, py - 2.0, r"$\mathbf{p}^{\mathrm{crop}}$ (crop-only head)", ha="center", va="top", fontsize=5.6, color="#444444")
     _arrow(ax, (zx + 1.3, yb + 8.1), (px - 1.4, py + 3.4), ls=(0, (2.5, 1.5)))
     ax.text(x0 + 19.0, yb - 3.0, r"$\mathcal{L}=\mathrm{CE}(\mathbf{p})+" + f"{aux_w:g}" + r"\,\mathrm{CE}(\mathbf{p}^{\mathrm{crop}})$",
             ha="center", va="center", fontsize=6.2)

@@ -156,7 +156,7 @@ def main():
     ax.text(1.5, 51.0, "d", fontsize=11, fontweight="bold", va="top")
     ty = 44.0                                                   # 两个区块标题的基线
     draw_icon(ax, "hospital", 3, ty - 3.6, 7.2)
-    ax.text(11.5, ty, "DDR development cohort", fontsize=6.6, fontweight="bold", va="center")
+    ax.text(11.5, ty, "DDR cohort", fontsize=6.6, fontweight="bold", va="center")
     parts = [("Training", cohort["ddr_train"], "#2B4C7E", "white"), ("Development", cohort["ddr_dev"], "#2A9D8F", "white"),
              ("Test", cohort["ddr_test"], "#E9C46A", "#222222")]
     x, x1, by, bh = 3.0, 72.0, 31.0, 6.0

@@ -112,3 +112,5 @@ camera_prior:                  # 05d/07h/08n：同一队列（站点）无标签
   dilate_px: 3                 # 修补掩膜外扩（canon 像素，同 occlusion）
   inpaint_radius: 5            # cv2.inpaint（Telea）半径（同 occlusion）
   methods: [N, D, C]           # 去掉复现分量后重新选裁块的规则（U 为固定布局，不受影响）
+  chance_shift: 32             # 偶然重合参照：每张照片的分量整体随机平移的最大格数（每轴）
+  chance_reps: 20

@@ -2,7 +2,9 @@
 对每个评价队列（只用照片，不用任何标签），统计每个预测病灶分量在同队列其他照片中同类分量落在同一位置（中心相距
 ≤radius 格）的比例（复现率）；复现率 ≥threshold 的分量视为相机伪影：不进入候选库与覆盖目标（NMS、DPP 与病灶覆盖
 重新选裁块），推理时在图像中修补（07h）。DDR 开发与训练区只用来报告真实病灶复现率的范围（阈值的依据）。
-输出 results/05d_camera_prior/{components.tsv.gz, summary.tsv, recurrence_maps.npz, crops.tsv.gz}。"""
+输出 results/05d_camera_prior/{components.tsv.gz, summary.tsv, recurrence_maps.npz, crops.tsv.gz}。
+敏感性分析：--threshold/--radius/--roles/--out 覆盖 config 中的值（如 --threshold 0.10 --roles messidor2 idrid
+--out 05d_camera_prior_t10），只用于补充表，主分析用 config 的设置。"""
 from __future__ import annotations
 
 import json
@@ -12,6 +14,7 @@ import zlib
 
 for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):   # 与 05_selection 相同（覆盖矩阵求和顺序）
     os.environ[_v] = "64"
+import argparse  # noqa: E402
 from multiprocessing import Pool  # noqa: E402
 from pathlib import Path  # noqa: E402
 
@@ -25,7 +28,17 @@ from scripts.lib.selection import extract_components, select_all  # noqa: E402
 
 CFG = load_config()
 CAL = load_calibration()
-CP = CFG["camera_prior"]
+CP = dict(CFG["camera_prior"])
+_ap = argparse.ArgumentParser()
+_ap.add_argument("--threshold", type=float); _ap.add_argument("--radius", type=int)
+_ap.add_argument("--roles", nargs="+"); _ap.add_argument("--out", default="05d_camera_prior")
+ARGS = _ap.parse_args()
+if ARGS.threshold is not None:
+    CP["threshold"] = ARGS.threshold
+if ARGS.radius is not None:
+    CP["radius"] = ARGS.radius
+if ARGS.roles:
+    CP["roles"], CP["reference_roles"] = ARGS.roles, []
 PAR = json.loads((ROOT / "results/05_selection/chosen_parameters.json").read_text())
 TYPES = CFG["segmenter"]["classes"]
 
@@ -63,7 +76,7 @@ def reselect(args):
 def main():
     man = pd.read_csv(ROOT / "results/02_manifest/images.tsv", sep="\t", keep_default_na=False, low_memory=False)
     man = man[man.included.astype(int) == 1]
-    out = ROOT / "results/05d_camera_prior"; out.mkdir(parents=True, exist_ok=True)
+    out = ROOT / "results" / ARGS.out; out.mkdir(parents=True, exist_ok=True)
     size, r, thr = CFG["segmenter"]["prob_map_size"], CP["radius"], CP["threshold"]
     comp_rows, summ, maps = [], [], {}
     for role in CP["reference_roles"] + CP["roles"]:
@@ -106,7 +119,7 @@ def main():
     crops = pd.concat([base, pd.DataFrame(new, columns=base.columns)]).sort_values(["image_key", "method", "slot"])
     crops.to_csv(out / "crops.tsv.gz", sep="\t", index=False)
     print("photos re-selected", len(fkeys), flush=True)
-    write_provenance("05d_camera_prior", [ROOT / "results/02_manifest/images.tsv", ROOT / "results/05_selection/crops.tsv.gz"],
+    write_provenance(ARGS.out, [ROOT / "results/02_manifest/images.tsv", ROOT / "results/05_selection/crops.tsv.gz"],
                      [out / "components.tsv.gz", out / "summary.tsv", out / "recurrence_maps.npz", out / "crops.tsv.gz"],
                      seed=CFG["seed"], extra={"threshold": thr, "radius": r, "photos_reselected": len(fkeys)})
 

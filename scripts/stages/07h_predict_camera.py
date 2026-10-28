@@ -2,7 +2,8 @@
 在 canon 图上修补（Telea，同 08k），全局图由修补后的 canon 图按预处理相同方式缩放（INTER_AREA，JPEG 质量 95），
 裁块取 05d 重新选择的坐标（无复现分量的照片与 05_selection 相同）。没有复现分量的照片输入与原来逐像素相同。
 每个运行写 results/07h_predict_camera/<tag>.tsv.gz：image_key, role, lp0..lp4（全精度对数概率），c0..c4（裁块辅助头）。
-用法：CUDA_VISIBLE_DEVICES=<gpu> python scripts/stages/07h_predict_camera.py --tags G512_s11 C_k4_s11_aux ..."""
+用法：CUDA_VISIBLE_DEVICES=<gpu> python scripts/stages/07h_predict_camera.py --tags G512_s11 C_k4_s11_aux ...
+敏感性分析：--prior 05d_camera_prior_t10 --out 07h_predict_camera_t10 --roles messidor2 idrid。"""
 from __future__ import annotations
 
 import argparse
@@ -29,7 +30,6 @@ CP = CFG["camera_prior"]
 PROC = ROOT / CFG["paths"]["processed"]
 S, C = CFG["preprocess"]["canon_size"], CFG["selection"]["crop"]
 KER = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * CP["dilate_px"] + 1,) * 2)
-OUT = ROOT / "results/07h_predict_camera"
 JPEG = [cv2.IMWRITE_JPEG_QUALITY, CFG["preprocess"]["jpeg_quality"]]
 
 
@@ -99,15 +99,18 @@ def run(model, loader, dev, aux: bool):
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--tags", nargs="+", required=True)
+    ap.add_argument("--prior", default="05d_camera_prior"); ap.add_argument("--out", default="07h_predict_camera")
+    ap.add_argument("--roles", nargs="+", default=CP["roles"])
     args = ap.parse_args()
+    OUT = ROOT / "results" / args.out
     set_global_seed(CFG["seed"]); torch.set_num_threads(8)
     dev = torch.device("cuda")
     man = pd.read_csv(ROOT / "results/02_manifest/images.tsv", sep="\t", keep_default_na=False, low_memory=False)
-    man = man[(man.included.astype(int) == 1) & man.role.isin(CP["roles"])].copy()
-    comp = pd.read_csv(ROOT / "results/05d_camera_prior/components.tsv.gz", sep="\t")
+    man = man[(man.included.astype(int) == 1) & man.role.isin(args.roles)].copy()
+    comp = pd.read_csv(ROOT / "results" / args.prior / "components.tsv.gz", sep="\t")
     fl = comp[comp.flagged == 1]
     flagged = {k: g.component.to_numpy() for k, g in fl.groupby("image_key")}
-    crops_path = ROOT / "results/05d_camera_prior/crops.tsv.gz"
+    crops_path = ROOT / "results" / args.prior / "crops.tsv.gz"
     OUT.mkdir(parents=True, exist_ok=True)
     for tag in args.tags:
         out = OUT / f"{tag}.tsv.gz"
@@ -123,7 +126,7 @@ def main():
         model.eval()
         parts = []
         ref = pd.read_csv(ROOT / "results/07g_referable_scores" / f"{tag}.tsv.gz", sep="\t")
-        for role in CP["roles"]:
+        for role in args.roles:
             sub = man[man.role == role].reset_index(drop=True)
             if not sub.image_key.isin(flagged).any():      # 无复现分量的队列：输入与原来相同，沿用 07g 的对数概率
                 d = sub[["image_key", "role"]].merge(ref, on=["image_key", "role"], how="left")
@@ -147,11 +150,11 @@ def main():
                   round(float((a.argmax(1) == b.argmax(1)).mean()), 4), "max |dP|",
                   round(float(np.abs(np.exp(a) - np.exp(b)).max()), 4), flush=True)
         pd.concat(parts).to_csv(out, sep="\t", index=False, float_format="%.8g")
-        write_provenance(f"07h_predict_camera/{tag}", [crops_path, ROOT / "results/05d_camera_prior/components.tsv.gz",
+        write_provenance(f"{args.out}/{tag}", [crops_path, ROOT / "results" / args.prior / "components.tsv.gz",
                                                          ROOT / "results/07g_referable_scores" / f"{tag}.tsv.gz"], [out],
                          seed=int(m["seed"]))
     if all((OUT / f"{t}.tsv.gz").exists() for t in args.tags):
-        write_provenance("07h_predict_camera", [crops_path], sorted(OUT.glob("*.tsv.gz")))
+        write_provenance(args.out, [crops_path], sorted(OUT.glob("*.tsv.gz")))
 
 
 if __name__ == "__main__":
