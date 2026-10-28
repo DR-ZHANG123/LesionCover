@@ -77,6 +77,7 @@ def panel_b(fig, spec):
         ax.set_title(lab, fontsize=7, pad=2)
         axes.append(ax)
         rows.append({"cohort": role, "max_pct": float(m.max()), "cells_at_or_above_5pct": int((m >= 5).sum())})
+        save_source(pd.DataFrame(blk).round(3), ROOT, "Fig5", f"b_map_{role}")          # 作图用的 128×128 显示矩阵（%）
     cax = fig.add_subplot(sub[1, :])
     cb = fig.colorbar(im, cax=cax, ticks=[0, 2, 5, 10, 20, 30], orientation="horizontal")
     cb.ax.tick_params(labelsize=5.5, width=0.5, length=2); cb.outline.set_linewidth(0.4)
