@@ -64,6 +64,7 @@ STAGES=(
   "08p_camera_sensitivity|08p_camera_sensitivity|python scripts/stages/08p_camera_sensitivity.py"
   "07_classify_hg|07_classify/C_k4_s33_auxhg|cp config/grading_runs_hg.txt logs/queue_hg.txt && bash scripts/run_queue.sh logs/queue_hg.txt ${CUDA_VISIBLE_DEVICES%%,*}"
   "08q_highres_global|08q_highres_global|bash scripts/run_highres_global.sh"
+  "08r_any_dr_auc|08r_any_dr_auc|python scripts/stages/08r_any_dr_auc.py"
   "09_cost|09_cost|python scripts/stages/09_cost.py"
 )
 
