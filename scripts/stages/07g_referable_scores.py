@@ -17,6 +17,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts.lib.clsnet import Grader, backbone_for  # noqa: E402
 from scripts.lib.gradedata import load_crops, make_loader  # noqa: E402
+from scripts.lib.variants import global_size  # noqa: E402
 from scripts.lib.repro import ROOT, load_config, set_global_seed, write_provenance  # noqa: E402
 
 ROLES = ("ddr_test", "deepdrid", "idrid", "messidor2", "eyepacs")
@@ -51,7 +52,7 @@ def main():
             continue
         m = re.match(r"(?P<method>[A-Za-z0-9]+?)(?:_k(?P<k>\d+))?_s(?P<seed>\d+)(?:_(?P<var>[a-z0-9_]+))?$", tag)
         method, k, var = m["method"], int(m["k"] or 4), (m["var"] or "").split("_")[0]
-        gsize = cfg["preprocess"]["global_size_large"] if method == "G1024" else cfg["preprocess"]["global_size"]
+        gsize = global_size(method, var, cfg)
         model = Grader(backbone_for(tag, cfg, ROOT), 5, cfg["classifier"]["attn_dim"], not method.startswith("G"),
                        crop_head="aux" in var).to(dev)
         model.load_state_dict(torch.load(ROOT / cfg["paths"]["checkpoints"] / "classify" / f"{tag}.pt", map_location=dev))

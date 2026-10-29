@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts.lib.calib import calibrated_map, load_calibration  # noqa: E402
 from scripts.lib.clsnet import Grader, backbone_for, to_u8  # noqa: E402
 from scripts.lib.gradedata import load_crops  # noqa: E402
+from scripts.lib.variants import global_size  # noqa: E402
 from scripts.lib.repro import ROOT, load_config, set_global_seed, write_provenance  # noqa: E402
 from scripts.lib.selection import extract_components  # noqa: E402
 
@@ -118,7 +119,7 @@ def main():
             continue
         m = re.match(r"(?P<method>[A-Za-z0-9]+?)(?:_k(?P<k>\d+))?_s(?P<seed>\d+)(?:_(?P<var>[a-z0-9_]+))?$", tag)
         method, var = m["method"], (m["var"] or "")
-        gsize = CFG["preprocess"]["global_size_large"] if method == "G1024" else CFG["preprocess"]["global_size"]
+        gsize = global_size(method, var, CFG)
         aux = "aux" in var
         model = Grader(backbone_for(tag, CFG, ROOT), 5, CFG["classifier"]["attn_dim"], not method.startswith("G"),
                        crop_head=aux).to(dev)

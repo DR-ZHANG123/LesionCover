@@ -9,10 +9,11 @@ auxmcsmall = aux + mc + small，auxmcbaseema = aux + mc + base + ema。
   effm   EfficientNetV2-M             dino   DINOv2 ViT-B/14（自然图像自监督）
   rf     RETFound ViT-L/16（彩色眼底自监督）  hr  ViT 编码器按原分辨率输入（不缩到 224）
   ema    以权重指数滑动平均模型做选择与预测    ord   加期望等级的平方误差（有序）损失
+  hg     全局图用 1024 像素（global_size_large），裁块不变
 """
 from __future__ import annotations
 
-TOKENS = ("aux", "gdrop", "mc", "art", "hn", "neg", "small", "base", "effm", "dino", "rf", "hr", "ema", "ord")
+TOKENS = ("aux", "gdrop", "mc", "art", "hn", "hg", "neg", "small", "base", "effm", "dino", "rf", "hr", "ema", "ord")
 
 
 def tokens(var: str) -> set[str]:
@@ -37,3 +38,9 @@ def encoder_name(var: str, cfg: dict, root) -> str:
         if key in t:
             return cc[field]
     return cc["backbone"]
+
+
+def global_size(method: str, var: str, cfg: dict) -> int:
+    """全局图边长：仅全局的 G1024，或 variant 含 hg 的裁块输入，用 global_size_large；其余用 global_size。"""
+    pc = cfg["preprocess"]
+    return pc["global_size_large"] if method == "G1024" or "hg" in tokens(var or "") else pc["global_size"]

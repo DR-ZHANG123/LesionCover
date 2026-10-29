@@ -23,7 +23,7 @@ from scripts.lib.clsnet import Grader, quadratic_kappa  # noqa: E402
 from scripts.lib.gradedata import hard_negative_weights, load_crops, make_loader  # noqa: E402
 from scripts.lib.repro import ROOT, load_config, set_global_seed, write_provenance  # noqa: E402
 from scripts.lib.trainutil import Ema, ordinal_loss, param_groups  # noqa: E402
-from scripts.lib.variants import encoder_name, tokens  # noqa: E402
+from scripts.lib.variants import encoder_name, tokens, global_size  # noqa: E402
 
 
 @torch.no_grad()
@@ -79,7 +79,7 @@ def main():
     train_roles = ["ddr_train", "aptos_train"] if "mc" in tk else ["ddr_train"]
     tr, dv = man[man.role.isin(train_roles)].reset_index(drop=True), man[man.role == "ddr_dev"].reset_index(drop=True)
     tr["grade"], dv["grade"] = tr.grade.astype(int), dv.grade.astype(int)
-    gsize = cfg["preprocess"]["global_size_large"] if args.method == "G1024" else cfg["preprocess"]["global_size"]
+    gsize = global_size(args.method, args.variant, cfg)
 
     tr_ds, tr_dl = make_loader(tr, load_crops(args.method, args.k, tr, var=args.variant), cfg, gsize, True, args.seed, cc["batch_size"],
                                artifact_aug="art" in tk,
