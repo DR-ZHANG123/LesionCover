@@ -102,7 +102,7 @@ def align_panel_labels(fig, pad_pt: float = 4.0, col_tol: float = 0.07) -> None:
     rows = []
     for it in sorted(rec, key=lambda d: -d["y1"]):
         for row in rows:
-            if any(_spans_overlap(it["y0"], it["y1"], o["y0"], o["y1"]) for o in row):
+            if all(_spans_overlap(it["y0"], it["y1"], o["y0"], o["y1"]) for o in row):   # 跨行的长面板不把上下两行连成一行
                 row.append(it); break
         else:
             rows.append([it])

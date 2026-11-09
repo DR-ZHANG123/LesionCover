@@ -46,10 +46,11 @@ def predict(model, loader, device, want_aux: bool = False):
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--tags", nargs="*"); ap.add_argument("--role", default="idrid")
     ap.add_argument("--croponly", action="store_true")
+    ap.add_argument("--manifest", default="results/02_manifest/images.tsv", help="MMRDR：results/01b_mmrdr/images.tsv")
     args = ap.parse_args()
     cfg = load_config(); set_global_seed(cfg["seed"]); torch.set_num_threads(8)
     dev = torch.device("cuda")
-    man = pd.read_csv(ROOT / "results/02_manifest/images.tsv", sep="\t", keep_default_na=False)
+    man = pd.read_csv(ROOT / args.manifest, sep="\t", keep_default_na=False)
     sub = man[(man.role == args.role) & (man.included.astype(int) == 1)].reset_index(drop=True)
     sub["grade"] = sub.grade.astype(int)
     sub["canon_path"] = [str(ROOT / cfg["paths"]["processed"] / "canon" / f"{k}.jpg") for k in sub.image_key]
@@ -64,7 +65,7 @@ def main():
         method, k, var = m["method"], int(m["k"] or 4), (m["var"] or "").split("_")[0]
         gsize = global_size(method, var, cfg)
         model = Grader(backbone_for(tag, cfg, ROOT), 5, cfg["classifier"]["attn_dim"], not method.startswith("G"),
-                       crop_head="aux" in var).to(dev)
+                       crop_head="aux" in var, img_size=gsize).to(dev)
         model.load_state_dict(torch.load(ROOT / cfg["paths"]["checkpoints"] / "classify" / f"{tag}.pt", map_location=dev))
         _, dl = make_loader(sub, load_crops(method, k, sub, var=var), cfg, gsize, False, int(m["seed"]), 32)
         want_aux = args.croponly and "aux" in var

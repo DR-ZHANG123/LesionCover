@@ -34,14 +34,14 @@ COHORTS = ("ddr_test", "deepdrid", "idrid", "messidor2")
 def load(key: str) -> dict:
     out = {}
     for d in sorted((ROOT / "results/07_classify").glob("*/")):
-        m = re.match(r"(?P<method>.+?)_s(?P<seed>\d+)(?:_(?P<var>[a-z]+))?$", d.name)
+        m = re.match(r"(?P<method>.+?)_s(?P<seed>\d+)(?:_(?P<var>[a-z0-9]+))?$", d.name)
         if not m or not (d / "PROVENANCE.json").exists():
             continue
         k = m["method"] + (f"_{m['var']}" if m["var"] else "")
         if k != key:
             continue
         pr = pd.read_csv(d / "predictions.tsv.gz", sep="\t")
-        for role in ("idrid", "messidor2", "eyepacs"):
+        for role in ("idrid", "messidor2", "eyepacs", "mmrdr"):
             fi = d / f"predictions_{role}.tsv.gz"
             if fi.exists() and not (pr.role == role).any():
                 pr = pd.concat([pr, pd.read_csv(fi, sep="\t")])

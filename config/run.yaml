@@ -9,6 +9,7 @@ paths:
   raw_messidor2: data/raw/Messidor2
   raw_aptos: data/raw/APTOS
   raw_eyepacs: data/raw/EyePACS       # 第四外部队列 EyePACS，只做外部评价
+  raw_mmrdr: data/raw/MMRDR           # 第五外部队列 MMRDR 彩色眼底子集（figshare 29423747，CC BY 4.0），只做外部评价
   processed: data/processed
   checkpoints: data/checkpoints
 
@@ -60,6 +61,8 @@ classifier:
   backbone_base: convnext_base.fb_in22k_ft_in1k        # variant base
   backbone_effm: tf_efficientnetv2_m.in21k_ft_in1k     # variant effm
   backbone_dino: vit_base_patch14_dinov2.lvd142m       # variant dino（自然图像自监督 ViT-B/14）
+  backbone_r50: resnet50.a1_in1k                       # variant r50（常用卷积基线）
+  backbone_swin: swin_tiny_patch4_window7_224.ms_in22k_ft_in1k@img   # variant swin（窗口 8，按全局图边长建模）
   dino_recipe: {lr: 1.0e-4, layer_decay: 0.75, drop_path: 0.1, head_lr: 1.0e-3}
   ema_decay: 0.999             # variant ema：权重指数滑动平均的衰减率
   ord_weight: 0.25             # variant ord：期望等级平方误差损失的权重
@@ -114,3 +117,50 @@ camera_prior:                  # 05d/07h/08n：同一队列（站点）无标签
   methods: [N, D, C]           # 去掉复现分量后重新选裁块的规则（U 为固定布局，不受影响）
   chance_shift: 32             # 偶然重合参照：每张照片的分量整体随机平移的最大格数（每轴）
   chance_reps: 20
+
+lcnet:                         # LesionCover 网络：1024 全局图 + 病灶 token（每个预测病灶分量一个）+ Transformer 融合
+  retfound_weights: data/hf/models--YukunZhou--RETFound_dinov2_meh/snapshots/6dff4c76632983267a6ae3000f7852b1f8667d9c/RETFound_dinov2_meh.pth   # RETFound DINOv2（AlzEye 预训练，HF YukunZhou/RETFound_dinov2_meh，CC BY-NC 4.0）
+  final_tag: fmrglearn         # 最终设计（DDR 开发区三模型集成 κ 最高）：DINOv2-L + LoRA 编码器、可学习象限规则 + 病灶负荷门控；07n 参数 --rule-learn --gate --fm vit_large_patch14_dinov2.lvd142m
+  rule_learn_init: [1.0, 3.0, 9.0]   # 规则阈值自由学习时的中性初始化（各类病灶相同，几何间隔，不取临床数值）
+  rule_lr: 0.01                # 规则阈值、斜率与有序分级参数的学习率（不加权重衰减）
+  rule_aux_weight: 0.5         # 只看规则特征的单调有序分级损失权重
+  max_tokens: 64               # 每张照片的病灶 token 上限（DDR 训练区第 90 百分位约 43 个分量）
+  cover_cell: 48               # 覆盖优先截断的空间格边长（概率图坐标）
+  global_size: 1024
+  d_model: 384
+  layers: 4
+  heads: 6
+  global_grid: 8               # 全局特征图池化成 8×8 个全局 token
+  roi: 3                       # 病灶 token 的 RoIAlign 输出边长
+  min_box: 6                   # RoI 最小边长（概率图坐标）
+  lesion_aux_weight: 0.5       # 只看病灶 token 的辅助分级头的损失权重
+  global_aux_weight: 0.5       # 只看全局特征的辅助分级头的损失权重
+  token_drop: 0.1              # 训练时随机丢弃病灶 token 的比例
+  epochs: 12
+  batch_size: 16
+  lr: 1.0e-4
+  head_lr: 5.0e-4
+  weight_decay: 0.05
+  warmup_epochs: 1
+  hyper_layers: 0              # 病灶超图卷积层数（0 = 不用；开发区比较后确定）
+  hyper_knn: 4                 # 空间近邻超边：每个病灶与其 4 个最近病灶
+  ord_weight: 0.0              # 有序损失权重
+  cons_weight: 0.0             # 病灶分支一致性损失权重
+
+grading_standard:              # 08u：各队列隐含分级标准（同一病灶尺子上的有序回归切点）；只做描述，不参与选择
+  n_boot: 1000
+
+local_calibration:             # 08v：部署步骤，新队列少量标注只重估输出层（单独评价，主表不变）；校准集与评价集按单位分开
+  per_grade: [5, 20]           # 每个等级抽取的校准样本数
+  repeats: 5
+  cohorts: [deepdrid, idrid, messidor2, eyepacs, mmrdr]
+  inputs: [LesionCover, "DINOv2 global tokens only", "Fixed rule thresholds", "ConvNeXt-T, fixed thresholds", "ConvNeXt-T encoder", "Global 1024", "Swin-T 1024", "EfficientNetV2-M 1024", "ResNet-50 1024", GDRNet, CABNet]
+
+published_methods:             # 07p：已发表方法用其官方代码（GDRBench，github.com/chehx/DGDR）在同一 DDR 训练区重新训练
+  code_dir: data/ext/DGDR      # 相对项目根目录；00_fetch_mmrdr.py 按固定 commit 取得
+  code_commit: 10f339748de69bd2f4b1bec49858eef95082679c
+  setting: ESDG                # 官方单源域设置（configs/datasets/GDRBench_ESDG.yaml）的全部超参
+  algorithms: [GDRNet, CABNet]
+  backbone: resnet50
+  fov_threshold: 10            # 视野掩膜（FundusAug 需要）：规范化照片灰度 > 阈值
+  num_workers: 8

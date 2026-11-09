@@ -1,0 +1,10 @@
+method	accuracy	qwk	source
+ResNet-50	0.784	0.766	Yu et al. 2026 (Dual-SwinOrd), Table 3
+MobileNet	0.758	0.720	Yu et al. 2026 (Dual-SwinOrd), Table 3
+Xception	0.778	0.782	Yu et al. 2026 (Dual-SwinOrd), Table 3
+CABNet	0.811	0.811	Yu et al. 2026 (Dual-SwinOrd), Table 3
+DeepMT-DR	0.825		Yu et al. 2026 (Dual-SwinOrd), Table 3
+CRA-Net	0.831	0.840	Yu et al. 2026 (Dual-SwinOrd), Table 3
+Madarapu et al.	0.840		Yu et al. 2026 (Dual-SwinOrd), Table 3
+Dual-SwinOrd	0.865	0.904	Yu et al. 2026 (Dual-SwinOrd), Table 3
+AttMamba	0.789		Guo et al., J Imaging Inform Med 2026;39(5):4535-4557, DDR test accuracy (no kappa reported)

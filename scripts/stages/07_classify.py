@@ -92,7 +92,7 @@ def main():
     elif "dino" in tk:                           # DINOv2 ViT 的微调设置
         cc.update(cc["dino_recipe"])
     model = Grader(backbone, 5, cc["attn_dim"], not args.method.startswith("G"), crop_head=aux_w > 0,
-                   drop_path=cc.get("drop_path", 0.0))
+                   drop_path=cc.get("drop_path", 0.0), img_size=gsize)
     model = model.to(device).to(memory_format=torch.channels_last)
     opt = torch.optim.AdamW(param_groups(model, cc), weight_decay=cc["weight_decay"])
     ema = Ema(model, cc["ema_decay"]) if "ema" in tk else None   # 含 ema：用滑动平均权重做轮次选择与预测

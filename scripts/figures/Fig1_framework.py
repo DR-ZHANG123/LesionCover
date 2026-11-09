@@ -1,10 +1,10 @@
-"""Fig. 1：方法与研究设计框架（矢量图；照片、病灶概率与裁块为真实数据；示意图标见 vector_icons.py：
-Health Icons（MIT 许可证）与代码绘制的网络、橡皮擦）。
-a 眼底照片 → 病灶分割器 → 校准后的四类病灶概率 → 在共享候选窗口中选出 K=4 个裁块；
-b 分级网络：全局图与裁块共享 ConvNeXt 编码，门控注意力汇聚裁块，与全局特征拼接后输出五级概率；
-c 选择原理：按像素显著性排序时窗口堆在最强病灶上；按病灶分量覆盖时每个窗口只为新带入的病灶得分；
-d 研究设计：DDR 开发队列与四个外部队列（人数取自 results/02_manifest），以及四项分析。
-示例图与 Fig. 2a 相同。整张图在毫米坐标系中排版，保证元素不重叠、对齐。"""
+"""Figure 1：LesionCover 网络与研究设计（矢量示意；照片、病灶 token、计数与概率为真实数据）。
+a 网络：眼底照片 → (1) DINOv2-L（LoRA）全局 token；(2) 分割器 → 每个预测病灶一个 token；(3) 逐类逐象限病灶计数 →
+  象限规则（可学习阈值、“至少 j 个象限”）→ 规则 token 与只看规则的有序分级；Transformer 融合，按病灶负荷门控后输出五级概率。
+b 研究设计：DDR 训练与开发区确定全部设置，DDR 测试区与五个外部队列各评价一次；同一病灶尺子测量各队列的划级位置。
+c 部署步骤：每级少量本地标注照片只重估输出层（温度与每级偏置），网络不变。
+示例照片：DDR 测试区参考 2 级、6–14 个病灶 token、四个象限均有病灶、LesionCover 三模型平均判为 2 级者中，
+概率最高（相同时 token 最少、image_key 最小）的一张。整张图在毫米坐标中排版。"""
 from __future__ import annotations
 
 import sys
@@ -14,196 +14,188 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch, Rectangle
+from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts" / "figures"))
-sys.path.insert(0, str(ROOT))
-from figstyle import LESION_COLORS, LESION_LABELS, METHOD_COLORS, MM, apply_style, save_fig, save_source  # noqa: E402
-from Fig2_coverage import pick_example  # noqa: E402
-from fig1_parts import draw_network, example_outputs, pick_thumbnail, round_thumb  # noqa: E402
-from vector_icons import draw_icon  # noqa: E402
+from cohorts import LC_COL, LES_COLOR  # noqa: E402
+from figstyle import MM, apply_style, save_fig, save_source  # noqa: E402
 
-W, H = 174.0, 157.0
-CROP = 384
-GREY = "#5A5A5A"
-
-
-def box(ax, x, y, w, h, text, fs=6.5, fc="#F2F2F2"):
-    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=1.6", lw=0.7, ec=GREY, fc=fc))
-    ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=fs, linespacing=1.25)
+W, H = 174.0, 122.0
+GREY, NAVY, TEAL = "#5A5A5A", "#2B4C7E", "#2A9D8F"
+GRADE_COL = ["#4C9F70", "#C9B33A", "#E08A2C", "#C8553D", "#7B2D26"]
+LES = ["MA", "HE", "EX", "SE"]
+P = [f"p{i}" for i in range(5)]
 
 
-def arrow(ax, x0, y0, x1, y1):
-    ax.add_patch(FancyArrowPatch((x0, y0), (x1, y1), arrowstyle="-|>", mutation_scale=7, lw=0.9, color="#444444",
-                                 shrinkA=0, shrinkB=0))
+def pick_example():
+    man = pd.read_csv(ROOT / "results/02_manifest/images.tsv", sep="\t", low_memory=False)
+    keys = man[(man.role == "ddr_test") & (man.grade == 2) & (man.included == 1)].image_key.sort_values()
+    runs = [pd.read_csv(ROOT / f"results/07n_lcnet/LC_fmrglearn_s{s}/predictions.tsv.gz", sep="\t").set_index("image_key")
+            for s in (11, 22, 33)]
+    best = None
+    for k in keys:
+        f = ROOT / "data/processed/lesion_tokens" / f"{k}.npz"
+        if not f.exists():
+            continue
+        z = np.load(f); c = z["counts"].reshape(4, 4)
+        if not (6 <= len(z["tokens"]) <= 14 and (c.sum(0) > 0).all()):
+            continue
+        p = np.mean([r.loc[k, P].to_numpy(float) for r in runs], 0)
+        if p.argmax() != 2:
+            continue
+        score = (round(p.max(), 3), -len(z["tokens"]))
+        if best is None or score > best[0]:
+            best = (score, k, p, z["tokens"], c)
+    return best[1:]
 
 
-def image(ax, img, x, y, s, edge=GREY, lw=0.5):
-    ax.imshow(img, extent=(x, x + s, y, y + s), interpolation="lanczos", zorder=1)
-    ax.add_patch(Rectangle((x, y), s, s, fill=False, lw=lw, ec=edge, zorder=2))
+def box(ax, x, y, w, h, title, body="", fc="#F4F4F4", ec=GREY, fs=6.2):
+    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=1.4", lw=0.7, ec=ec, fc=fc, zorder=2))
+    if body:
+        ax.text(x + w / 2, y + h - 2.2, title, ha="center", va="top", fontsize=fs, fontweight="bold", zorder=3)
+        ax.text(x + w / 2, y + h - 6.0, body, ha="center", va="top", fontsize=fs - 0.8, linespacing=1.25, zorder=3)
+    else:
+        ax.text(x + w / 2, y + h / 2, title, ha="center", va="center", fontsize=fs, fontweight="bold", zorder=3,
+                linespacing=1.2)
 
 
-def caption(ax, x, y, text, fs=6.8, bold=False):
-    ax.text(x, y, text, ha="center", va="bottom", fontsize=fs, linespacing=1.2, fontweight="bold" if bold else "normal")
+def arrow(ax, p0, p1, color="#444444", lw=0.8, ls="-"):
+    ax.add_patch(FancyArrowPatch(p0, p1, arrowstyle="-|>", mutation_scale=6.5, lw=lw, color=color, linestyle=ls,
+                                 shrinkA=0, shrinkB=0, zorder=4))
+
+
+def photo(ax, key, tokens, x, y, s):
+    im = cv2.imread(str(ROOT / "data/processed/canon" / f"{key}.jpg"))[:, :, ::-1]
+    n = 520; im = cv2.resize(im, (n, n), interpolation=cv2.INTER_AREA).astype(np.float32)
+    yy, xx = np.mgrid[:n, :n]
+    fov = (xx - n / 2 + 0.5) ** 2 + (yy - n / 2 + 0.5) ** 2 <= (n / 2 - 2) ** 2
+    gain = 215.0 / np.percentile(im.mean(2)[fov], 99)            # 仅显示：按视野内亮度统一增益
+    im = np.clip(im * gain, 0, 255); im[~fov] = 0; im = im.astype(np.uint8)
+    ax.imshow(im, extent=(x, x + s, y, y + s), interpolation="lanczos", zorder=1)
+    ax.plot([x + s / 2] * 2, [y, y + s], color="white", lw=0.5, ls=(0, (2, 1.5)), zorder=2)
+    ax.plot([x, x + s], [y + s / 2] * 2, color="white", lw=0.5, ls=(0, (2, 1.5)), zorder=2)
+    for q, (qx, qy) in enumerate(((0.06, 0.94), (0.94, 0.94), (0.06, 0.06), (0.94, 0.06))):
+        ax.text(x + qx * s, y + qy * s, str(q + 1), color="white", fontsize=5.4, ha="center", va="center", zorder=3)
+    f = s / 768.0
+    for t in tokens:                                     # (cls, q, log_area, x, y, w, h)，概率图坐标（768）
+        c, cx, cy, w, h = int(t[0]), t[3], t[4], max(t[5], 10), max(t[6], 10)
+        ax.add_patch(Rectangle((x + (cx - w / 2) * f, y + s - (cy + h / 2) * f), w * f, h * f, fill=False, lw=0.6,
+                               ec=LES_COLOR[LES[c]], zorder=3))
+
+
+def panel_a(ax, key, p, tokens, counts):
+    ax.text(2, H - 2, "a", fontsize=9, fontweight="bold", va="top")
+    s = 36; px, py = 6, 70
+    photo(ax, key, tokens, px, py, s)
+    ax.text(px + s / 2, py - 2.0, "Colour fundus photograph\n(DDR test, reference grade 2)", ha="center", va="top", fontsize=5.6)
+    for i, l in enumerate(LES):
+        ax.add_patch(Rectangle((px + i * 9.2, py + s + 2.2), 2.2, 2.2, fill=False, ec=LES_COLOR[l], lw=0.8))
+        ax.text(px + i * 9.2 + 3.0, py + s + 3.3, l, fontsize=5.4, va="center")
+    # 三条通路
+    bx, bw = 50, 50
+    rows = [(99, "Foundation-model encoder", "DINOv2-L with LoRA, 1024-pixel view\n→ 8 × 8 global tokens", "#EAF1FB", NAVY),
+            (82, "Lesion tokens", "segmenter → one token per lesion:\ntype, confidence, area, position, appearance", "#FBEDEC", LC_COL),
+            (65, "Quadrant rule", "learned thresholds per lesion type;\n'at least j quadrants' → rule token", "#FFF5E0", "#B07A00")]
+    for y, t, b, fc, ec in rows:
+        box(ax, bx, y, bw, 14, t, b, fc=fc, ec=ec)
+        arrow(ax, (px + s + 1.5, py + s / 2), (bx - 0.8, y + 7))
+    # 计数表（真实）：象限 1 左上、2 右上、3 左下、4 右下
+    cx, cy = bx + 12, 52.6
+    ax.text(cx + 2, cy + 10.2, "Quadrant", fontsize=5.0, va="center", ha="right", color=GREY)
+    for q in range(4):
+        ax.text(cx + 9 + q * 6.5, cy + 10.2, str(q + 1), fontsize=5.0, ha="center", va="center", color=GREY)
+    for i, l in enumerate(LES):
+        ax.text(cx, cy + 7.2 - i * 2.8, l, fontsize=5.2, va="center", color=LES_COLOR[l])
+        for q in range(4):
+            ax.text(cx + 9 + q * 6.5, cy + 7.2 - i * 2.8, f"{int(counts[i, q])}", fontsize=5.2, ha="center", va="center")
+    arrow(ax, (bx + 3, cy + 4), (bx + 3, 64.6), lw=0.6)
+    # Transformer、门控、输出
+    tx = 108
+    box(ax, tx, 70, 22, 38, "Transformer", "4 layers\n\nclass token +\nglobal, lesion,\ncount and\nrule tokens", fc="#F0F0F0", fs=5.8)
+    for y, *_ in rows:
+        arrow(ax, (bx + bw + 0.8, y + 7), (tx - 0.8, min(max(y + 7, 74), 104)))
+    gx = 134
+    box(ax, gx, 80, 14, 18, "Burden\ngate", fc="#F0F0F0", fs=5.8)
+    ax.text(gx + 7, 78.0, "weights fused vs\nglobal output by\nlesion counts", ha="center", va="top", fontsize=4.9)
+    arrow(ax, (tx + 22.8, 89), (gx - 0.8, 89))
+    # 五级概率（真实）
+    ox, oy, ow = 152, 78, 19
+    arrow(ax, (gx + 14.8, 89), (ox - 0.8, 89))
+    for g in range(5):
+        y = oy + 18 - g * 4.2
+        ax.add_patch(Rectangle((ox + 6, y), (ow - 7) * p[g], 3.0, fc=GRADE_COL[g], ec="none"))
+        ax.text(ox + 5.2, y + 1.5, str(g), fontsize=5.2, ha="right", va="center")
+        ax.text(ox + 6.5 + (ow - 7) * p[g], y + 1.5, f"{p[g]:.2f}", fontsize=4.8, va="center")
+    ax.text(ox + ow / 2 + 1, oy + 23.2, "Grade\nprobabilities", ha="center", fontsize=5.6, fontweight="bold")
+    ax.text(ox + ow / 2 + 1, oy - 1.5, "via the standard layer\n(temperature T,\ngrade biases b$_m$)", ha="center", va="top", fontsize=4.9,
+            color=LC_COL)
+    # 只看规则的有序分级
+    ax.text(bx + bw + 3, 60.5, "rule-only ordinal grade:\nP(grade > k) = σ(s − c$_k$)", fontsize=5.0, va="center", color="#8A6100")
+    return pd.DataFrame({"image_key": [key] * 5, "grade": range(5), "probability": p})
+
+
+def panel_b(ax):
+    ax.text(2, 47, "b", fontsize=9, fontweight="bold", va="top")
+    man = pd.read_csv(ROOT / "results/02_manifest/images.tsv", sep="\t", low_memory=False)
+    mm = pd.read_csv(ROOT / "results/01b_mmrdr/images.tsv", sep="\t", low_memory=False)
+    man = man[man.included == 1]; mm = mm[mm.included == 1]
+    n = man.role.value_counts().to_dict(); n["mmrdr"] = len(mm)
+    box(ax, 6, 28, 30, 13, "DDR training", f"{n['ddr_train']:,} photographs\nall weights learned", fc="#EEEEEE")
+    box(ax, 6, 11, 30, 13, "DDR development", f"{n['ddr_dev']:,} photographs\nall settings chosen", fc="#EEEEEE")
+    arrow(ax, (21, 27.4), (21, 24.6))
+    cohorts = [("DDR test", n["ddr_test"]), ("DeepDRiD", n["deepdrid"]), ("IDRiD", n["idrid"]), ("Messidor-2", n["messidor2"]),
+               ("EyePACS", n["eyepacs"]), ("MMRDR", n["mmrdr"])]
+    x0 = 44
+    ax.text(x0 + 21, 43.2, "Evaluated once, model unchanged", ha="center", fontsize=5.8, fontweight="bold")
+    for i, (c, k) in enumerate(cohorts):
+        y = 36 - i * 5.4
+        ax.add_patch(FancyBboxPatch((x0, y), 42, 4.4, boxstyle="round,pad=0,rounding_size=0.8", lw=0.5, ec=GREY,
+                                    fc="#FFFFFF" if i else "#EEEEEE"))
+        ax.text(x0 + 2, y + 2.2, c, fontsize=5.6, va="center")
+        ax.text(x0 + 40, y + 2.2, f"{k:,}", fontsize=5.6, va="center", ha="right")
+    arrow(ax, (36.8, 17.5), (x0 - 0.8, 20))
+    ax.text(x0 + 21, 2.6, "photographs (DeepDRiD graded per eye)", ha="center", fontsize=5.0, color=GREY)
+    # 同一把病灶尺子
+    rx = 100
+    ax.text(rx + 15, 43.2, "Same lesion ruler in every cohort", ha="center", fontsize=5.8, fontweight="bold")
+    for i, (c, sh, col) in enumerate([("DDR", 0.0, "#424242"), ("External", 1.0, "#1B9E77")]):
+        y = 33 - i * 10
+        ax.plot([rx, rx + 30], [y, y], color=GREY, lw=0.7)
+        ax.text(rx - 1, y, c, fontsize=5.4, ha="right", va="center")
+        for j, b in enumerate([4, 9, 18, 24]):
+            x = rx + b + (sh * 4 if j == 1 else 0)
+            ax.plot([x, x], [y - 1.6, y + 1.6], color=LC_COL if j == 1 else col, lw=1.1 if j == 1 else 0.8)
+    ax.annotate("", xy=(rx + 13, 20.6), xytext=(rx + 9, 20.6),
+                arrowprops=dict(arrowstyle="-|>", color=LC_COL, lw=0.8, mutation_scale=6))
+    ax.text(rx + 15, 14.5, "lesion burden index\n(mild | moderate boundary in red)", ha="center", va="top", fontsize=5.0, color=GREY)
+    return pd.DataFrame(cohorts, columns=["cohort", "n"])
+
+
+def panel_c(ax):
+    ax.text(136, 47, "c", fontsize=9, fontweight="bold", va="top")
+    box(ax, 139, 26, 33, 15, "New site: align standard layer", "5 labelled photographs per grade\nre-estimate T and 4 grade biases\nall other weights unchanged",
+        fc="#FBEDEC", ec=LC_COL)
+    ax.text(155.5, 22.5, "Evaluated on photographs of\nother patients in the same cohort", ha="center", va="top", fontsize=5.0,
+            color=GREY)
+    return None
 
 
 def main():
     apply_style(7)
-    from scripts.lib.calib import calibrated_map, load_calibration
-    from scripts.lib.repro import load_config
-    comp = pd.read_csv(ROOT / "results/06_coverage/components.tsv.gz", sep="\t")
-    crops = pd.read_csv(ROOT / "results/05_selection/crops.tsv.gz", sep="\t")
-    key = pick_example(comp)
-    canon = cv2.imread(str(ROOT / "data/processed/canon" / f"{key}.jpg"))[:, :, ::-1]
-    prob, _, tau = calibrated_map(key, load_config(), load_calibration())
-    n = 520
-    small = cv2.resize(canon, (n, n), interpolation=cv2.INTER_AREA)
-    f = n / canon.shape[0]
-    over = small.astype(np.float32) / 255 * 0.6
-    for k, les in enumerate(["MA", "HE", "EX", "SE"]):
-        p = cv2.resize(prob[k], (n, n), interpolation=cv2.INTER_LINEAR)
-        a = np.clip(p / max(tau[k], 1e-3) * 0.5, 0, 1)[..., None]          # 阈值处半透明
-        col = np.array([int(LESION_COLORS[les][i:i + 2], 16) / 255 for i in (1, 3, 5)])
-        over = over * (1 - a) + col * a
-    over = np.clip(over, 0, 1)
-    sel = crops[(crops.image_key == key) & (crops.method == "C_k4")].sort_values("slot")[["x0", "y0"]].to_numpy()
-
-    import json
-    summ = json.loads((ROOT / "results/02_manifest/summary.json").read_text())
-    man = pd.read_csv(ROOT / "results/02_manifest/images.tsv", sep="\t", keep_default_na=False, dtype=str)
-    man = man[man.included == "1"]
-    nr, mk = summ["n_by_role"], summ["masks_by_role"]
-    cohort = {"ddr_train": nr["ddr_train"], "ddr_dev": nr["ddr_dev"], "ddr_test": nr["ddr_test"],
-              "seg_train": mk["seg_train"], "seg_dev": mk["seg_dev"], "seg_test": mk["seg_test"],
-              "drid_eyes": summ["deepdrid_eyes"], "drid_patients": summ["deepdrid_patients"], "idrid": nr["idrid"],
-              "idrid_seg": nr["idrid_seg"], "mes": nr["messidor2"], "mes_exams": man[man.role == "messidor2"].patient_id.nunique(),
-              "eyp": nr["eyepacs"], "eyp_patients": summ["eyepacs_patients"]}
-
+    key, p, tokens, counts = pick_example()
     fig = plt.figure(figsize=(W * MM, H * MM))
-    ax = fig.add_axes([0, 0, 1, 1])
-    ax.set_xlim(0, W); ax.set_ylim(0, H); ax.set_aspect("equal"); ax.axis("off")
-
-    # ---------------- a：病灶引导的裁块选择
-    s, ya = 34.0, 112.0
-    ax.text(1.5, H - 1.5, "a", fontsize=11, fontweight="bold", va="top")
-    draw_icon(ax, "fundus_camera", 1.5, ya + 10, 13)
-    arrow(ax, 15.0, ya + s / 2, 18.5, ya + s / 2)
-    image(ax, small, 19, ya, s)
-    caption(ax, 19 + s / 2, ya + s + 1.5, "Fundus photograph\n(1536 × 1536 pixels)")
-    arrow(ax, 53.5, ya + s / 2, 56.5, ya + s / 2)
-    draw_icon(ax, "segmenter", 57, ya + 13, 15)
-    ax.text(64.5, ya + 12, "Lesion\nsegmenter\n(U-Net)", ha="center", va="top", fontsize=6.0, linespacing=1.2)
-    arrow(ax, 72.5, ya + s / 2, 75.5, ya + s / 2)
-    image(ax, over, 76, ya, s)
-    caption(ax, 76 + s / 2, ya + s + 1.5, "Calibrated lesion\nprobability maps")
-    for i, les in enumerate(["MA", "HE", "EX", "SE"]):
-        xx, yy = 77 + (i % 2) * 18, ya - 3.5 - (i // 2) * 4.0
-        ax.add_patch(Circle((xx, yy), 1.0, fc=LESION_COLORS[les], ec="none"))
-        ax.text(xx + 2, yy, LESION_LABELS[les], va="center", fontsize=6.0)
-    arrow(ax, 110.5, ya + s / 2, 135.5, ya + s / 2)
-    draw_icon(ax, "magnifier", 117.5, ya + s / 2 + 1.5, 11)
-    ax.text(123, ya + s / 2 - 1.5, "LesionCover:\ngreedy coverage\nof lesion\ncomponents (K = 4)", ha="center", va="top", fontsize=6.0,
-            linespacing=1.2)
-    image(ax, small, 136, ya, s)
-    for x, y in sel:
-        ax.add_patch(Rectangle((136 + x * f / n * s, ya + s - (y + CROP) * f / n * s), CROP * f / n * s,
-                               CROP * f / n * s, fill=False, lw=1.0, ec=METHOD_COLORS["C"], zorder=3))
-    caption(ax, 136 + s / 2, ya + s + 1.5, "Four crops chosen to\ncover distinct lesions")
-
-    # ---------------- b：分级网络（结构示意；概率与注意力为示例照片三个覆盖模型的平均输出）
-    yb = 60.0
-    ax.text(1.5, 107.0, "b", fontsize=11, fontweight="bold", va="top")
-    g = cv2.resize(canon, (200, 200), interpolation=cv2.INTER_AREA)
-    image(ax, g, 5, yb + 22, 20)
-    caption(ax, 15, yb + 43, "Global view\n512 × 512")
-    t = 9.6
-    for i, (x, y) in enumerate(sel):
-        tile = cv2.resize(canon[y:y + CROP, x:x + CROP], (140, 140), interpolation=cv2.INTER_AREA)
-        image(ax, tile, 5 + (i % 2) * (t + 0.8), yb + 1 + (1 - i // 2) * (t + 0.8), t, edge=METHOD_COLORS["C"], lw=0.8)
-    caption(ax, 15, yb - 5.0, "Four crops 384 × 384")
-    draw_icon(ax, "encoder", 28.5, yb + 15, 17)
-    ax.text(37.0, yb + 13.6, "Shared\nencoder", ha="center", va="top", fontsize=6.0, linespacing=1.15)
-    arrow(ax, 25.8, yb + 32, 28.6, yb + 27)
-    arrow(ax, 25.8, yb + 11, 28.6, yb + 18)
-    out = example_outputs(ROOT, key)
-    draw_network(ax, yb, out, load_config()["classifier"]["crop_aux_weight"], x0=46.5)
-    save_source(pd.DataFrame({"grade": range(5), "p": out["p"], "p_crop": out["p_crop"]}).assign(image_key=key),
-                ROOT, "Fig1", "b_grade_probabilities")
-    save_source(pd.DataFrame({"crop": range(1, 5), "attention": out["attn"]}).assign(image_key=key), ROOT, "Fig1",
-                "b_attention")
-
-    # ---------------- c：选择原理
-    yc = 60.0
-    ax.text(124, 107.0, "c", fontsize=11, fontweight="bold", va="top")
-    lesions = [("HE", 0.36, 0.55, 0.14), ("HE", 0.47, 0.44, 0.06)] + \
-              [("MA", x, y, 0.028) for x, y in [(0.73, 0.30), (0.80, 0.38), (0.70, 0.20), (0.22, 0.20), (0.62, 0.80), (0.82, 0.70)]]
-    panels = [("Heatmap\nranking", [(0.18, 0.37, 0.34), (0.30, 0.28, 0.34)], METHOD_COLORS["T"]),
-              ("LesionCover", [(0.19, 0.38, 0.34), (0.58, 0.12, 0.34)], METHOD_COLORS["C"])]
-    for j, (title, wins, col) in enumerate(panels):
-        x0, d = 127 + j * 24, 21.0
-        y0 = yc + 14
-        ax.add_patch(Circle((x0 + d / 2, y0 + d / 2), d / 2, fc="#F6E3D0", ec="#B98B67", lw=0.6))
-        for les, lx, ly, r in lesions:
-            ax.add_patch(Circle((x0 + lx * d, y0 + (1 - ly) * d), r * d, fc=LESION_COLORS[les], ec="none"))
-        for wx, wy, ww in wins:
-            ax.add_patch(Rectangle((x0 + wx * d, y0 + (1 - wy - ww) * d), ww * d, ww * d, fill=False, lw=1.0, ec=col))
-        caption(ax, x0 + d / 2, y0 + d + 1.5, title, fs=6.5, bold=True)
-    ax.text(147.5, yc + 8.0, "Each lesion counts once:", ha="center", fontsize=6.2)
-    ax.text(147.5, yc + 1.5, r"$F(S)=\sum_{\ell}\, q_\ell \max_{j\in S}\, a_{\ell j}$", ha="center", fontsize=7)
-
-    # ---------------- d：研究设计（图形化：分区比例条、外部队列卡片、四项分析图标；细节在图注与表 1）
-    ax.text(1.5, 51.0, "d", fontsize=11, fontweight="bold", va="top")
-    ty = 44.0                                                   # 两个区块标题的基线
-    draw_icon(ax, "hospital", 3, ty - 3.6, 7.2)
-    ax.text(11.5, ty, "DDR cohort", fontsize=6.6, fontweight="bold", va="center")
-    parts = [("Training", cohort["ddr_train"], "#2B4C7E", "white"), ("Development", cohort["ddr_dev"], "#2A9D8F", "white"),
-             ("Test", cohort["ddr_test"], "#E9C46A", "#222222")]
-    x, x1, by, bh = 3.0, 72.0, 31.0, 6.0
-    tot = sum(p[1] for p in parts)
-    for lab, n_, fc, tc in parts:
-        w_ = (x1 - 3.0) * n_ / tot
-        ax.add_patch(Rectangle((x, by), w_, bh, fc=fc, ec="white", lw=0.6))
-        ax.text(x + w_ / 2, by + bh / 2, f"{n_:,}", ha="center", va="center", fontsize=6.0, color=tc)
-        ax.text(x + w_ / 2, by - 1.2, lab, ha="center", va="top", fontsize=5.6, color="#444444")
-        x += w_
-    ax.text(3.0, by - 6.2, f"{cohort['seg_train'] + cohort['seg_dev'] + cohort['seg_test']} photographs with lesion masks",
-            fontsize=5.6, color="#444444", va="top")
-    arrow(ax, 74.0, by + bh / 2, 84.5, by + bh / 2)
-    ax.text(79.3, by + bh / 2 + 1.4, "applied\nunchanged", ha="center", va="bottom", fontsize=5.6, linespacing=1.1)
-    draw_icon(ax, "globe", 86, ty - 3.6, 7.2)
-    ax.text(94.5, ty, "External test cohorts", fontsize=6.6, fontweight="bold", va="center")
-    tiles = [("DeepDRiD", cohort["drid_eyes"], "eyes"), ("IDRiD", cohort["idrid"], "photographs"),
-             ("Messidor-2", cohort["mes"], "photographs"), ("EyePACS", cohort["eyp"], "photographs")]
-    tw, gap, t0, s_ = 20.6, 1.4, 86.0, 11.0
-    roles = ["deepdrid", "idrid", "messidor2", "eyepacs"]
-    thumbs = []
-    for k, ((nm, n_, unit), role) in enumerate(zip(tiles, roles)):   # 每个队列一张代表性照片（相机差异一目了然）
-        tx = t0 + k * (tw + gap)
-        tk = pick_thumbnail(ROOT, man, role)
-        cy = by + bh / 2 + 1.5
-        ax.imshow(round_thumb(ROOT, tk), extent=(tx + (tw - s_) / 2, tx + (tw + s_) / 2, cy - s_ / 2, cy + s_ / 2),
-                  interpolation="lanczos", zorder=2)
-        ax.text(tx + tw / 2, cy - s_ / 2 - 0.5, nm, ha="center", va="top", fontsize=6.2, fontweight="bold")
-        ax.text(tx + tw / 2, cy - s_ / 2 - 3.1, f"{n_:,} {unit}", ha="center", va="top", fontsize=5.6, color="#444444")
-        thumbs.append({"cohort": nm, "image_key": tk})
-    save_source(pd.DataFrame(thumbs), ROOT, "Fig1", "d_thumbnails")
-    ax.plot([3, 172.6], [20.5, 20.5], color="#D0D0D0", lw=0.5)
-    # 主线的四步：证据进入分级器 → 分级器依赖它 → 少漏轻度 DR → 新相机上去除复现斑点
-    items = [("magnifier", "1  Microaneurysms\n    reach the grader"), ("eraser", "2  The grader\n    relies on them"),
-             ("stethoscope", "3  Fewer missed\n    mild DR"), ("fundus_camera", "4  New cameras:\n    recurrent spots removed")]
-    for k, (icon, label) in enumerate(items):
-        x = 3 + k * 43
-        draw_icon(ax, icon, x, 5.0, 11.5)
-        ax.text(x + 13.5, 10.75, label, fontsize=6.0, va="center", linespacing=1.15)
-        if k < len(items) - 1:
-            arrow(ax, x + 36.5, 10.75, x + 41.5, 10.75)
-    save_source(pd.DataFrame([cohort]), ROOT, "Fig1", "d_cohorts")
-
-    save_source(pd.DataFrame(sel, columns=["x0_canon", "y0_canon"]).assign(image_key=key), ROOT, "Fig1", "a_crops")
-    fig.savefig(ROOT / "figures" / "Fig1.pdf", bbox_inches=None)
-    fig.savefig(ROOT / "figures" / "Fig1.png", bbox_inches=None, dpi=600)
-    plt.close(fig)
+    ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H); ax.axis("off")
+    src_a = panel_a(ax, key, p, tokens, counts)
+    src_b = panel_b(ax)
+    panel_c(ax)
+    ax.plot([2, W - 2], [49.5, 49.5], color="#DDDDDD", lw=0.6)
+    save_source(src_a, ROOT, "Fig1", "a")
+    save_source(src_b, ROOT, "Fig1", "b")
+    tok = pd.DataFrame(tokens, columns=["cls", "q", "log_area", "x", "y", "w", "h"]); tok.insert(0, "image_key", key)
+    save_source(tok, ROOT, "Fig1", "a_tokens")
+    fig.savefig(ROOT / "figures/Fig1.pdf"); fig.savefig(ROOT / "figures/Fig1.png", dpi=600)
+    print(key)
 
 
 if __name__ == "__main__":

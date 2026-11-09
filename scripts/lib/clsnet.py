@@ -45,7 +45,7 @@ def backbone_for(tag: str, cfg: dict, root) -> str:
 
 class Grader(nn.Module):
     def __init__(self, backbone: str, n_cls: int = 5, attn_dim: int = 256, use_crops: bool = True,
-                 crop_head: bool = False, drop_path: float = 0.0):
+                 crop_head: bool = False, drop_path: float = 0.0, img_size: int = 512):
         super().__init__()
         self.in_size, self.patch = None, None
         mean, std = MEAN, STD
@@ -69,6 +69,12 @@ class Grader(nn.Module):
             self.enc.set_grad_checkpointing(True)
             self._deterministic_attention()
             self.patch = 14
+            mean, std = self.enc.pretrained_cfg["mean"], self.enc.pretrained_cfg["std"]
+        elif backbone.endswith("@img"):
+            # Swin：窗口注意力要求输入网格可被窗口整除，按全局图边长（img_size）建模，窗口 8，相对位置表由 timm 插值
+            self.enc = timm.create_model(backbone.removesuffix("@img"), pretrained=True, num_classes=0,
+                                         drop_path_rate=drop_path, img_size=img_size, window_size=8)
+            self.enc.set_grad_checkpointing(True)
             mean, std = self.enc.pretrained_cfg["mean"], self.enc.pretrained_cfg["std"]
         else:
             self.enc = timm.create_model(backbone, pretrained=True, num_classes=0, drop_path_rate=drop_path)

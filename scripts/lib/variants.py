@@ -10,10 +10,12 @@ auxmcsmall = aux + mc + small，auxmcbaseema = aux + mc + base + ema。
   rf     RETFound ViT-L/16（彩色眼底自监督）  hr  ViT 编码器按原分辨率输入（不缩到 224）
   ema    以权重指数滑动平均模型做选择与预测    ord   加期望等级的平方误差（有序）损失
   hg     全局图用 1024 像素（global_size_large），裁块不变
+  r50    ResNet-50                    swin   Swin-T（窗口 8，输入边长与全局图相同）
 """
 from __future__ import annotations
 
-TOKENS = ("aux", "gdrop", "mc", "art", "hn", "hg", "neg", "small", "base", "effm", "dino", "rf", "hr", "ema", "ord")
+TOKENS = ("aux", "gdrop", "mc", "art", "hn", "hg", "neg", "small", "base", "effm", "dino", "rf", "hr", "ema", "ord",
+          "r50", "swin")
 
 
 def tokens(var: str) -> set[str]:
@@ -34,7 +36,7 @@ def encoder_name(var: str, cfg: dict, root) -> str:
     if "rf" in t:
         return str(root / cc["backbone_rf"]) + ("@hr" if "hr" in t else "")
     for key, field in (("small", "backbone_large"), ("base", "backbone_base"), ("effm", "backbone_effm"),
-                       ("dino", "backbone_dino")):
+                       ("dino", "backbone_dino"), ("r50", "backbone_r50"), ("swin", "backbone_swin")):
         if key in t:
             return cc[field]
     return cc["backbone"]

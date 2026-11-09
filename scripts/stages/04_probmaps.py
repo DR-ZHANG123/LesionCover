@@ -30,6 +30,8 @@ class CanonSet(torch.utils.data.Dataset):
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--ckpt", default="segmenter.pt"); ap.add_argument("--subdir", default="probmaps")
     ap.add_argument("--shard", default="0/1")
+    ap.add_argument("--manifest", default="results/02_manifest/images.tsv", help="另一队列的图像表（如 results/01b_mmrdr/images.tsv）")
+    ap.add_argument("--stage", default="", help="记录名（缺省按 subdir）")
     args = ap.parse_args()
     si, sn = map(int, args.shard.split("/"))
     cfg = load_config()
@@ -37,7 +39,7 @@ def main():
     torch.set_num_threads(8)
     proc = ROOT / cfg["paths"]["processed"]
     outdir = proc / args.subdir; outdir.mkdir(parents=True, exist_ok=True)
-    man = pd.read_csv(ROOT / "results/02_manifest/images.tsv", sep="\t")
+    man = pd.read_csv(ROOT / args.manifest, sep="\t", low_memory=False)
     keys = man.image_key[man.included == 1].tolist()
     todo = [k for k in keys[si::sn] if not (outdir / f"{k}.npz").exists()]
     device = torch.device("cuda")
@@ -60,7 +62,7 @@ def main():
     if missing:                      # 分片运行时只在所有分片完成后写出记录
         print(f"{len(missing)} maps still missing (other shards running); provenance not written", flush=True)
         return
-    stage = "04_probmaps" if args.subdir == "probmaps" else f"04_{args.subdir}"
+    stage = args.stage or ("04_probmaps" if args.subdir == "probmaps" else f"04_{args.subdir}")
     (ROOT / "results" / stage).mkdir(parents=True, exist_ok=True)
     pd.DataFrame({"image_key": keys}).to_csv(ROOT / "results" / stage / "keys.tsv", sep="\t", index=False)
     write_provenance(stage, [ROOT / cfg["paths"]["checkpoints"] / args.ckpt],
