@@ -1,7 +1,7 @@
 """Figure 5：每级少量本地标注照片即可把输出对齐到当地分级标准（网络权重不变）。只读 results/08v_local_calibration/metrics.tsv。
 a 五个外部队列 κ 的平均：原输出与每级 5、20 张照片校准（温度 + 每级偏置）后；评价集与校准集按单位分开，五次随机抽取平均
 b LesionCover 与只用全局图的 DINOv2-L 在每个外部队列的 κ：原输出 → 每级 5 张校准
-c IDRiD 上 LesionCover 校准前后：轻度判为 ≥2 级、可转诊特异度、可转诊敏感度"""
+c 每个外部队列 LesionCover 的可转诊特异度与敏感度：DDR 标准层 → 每级 5 张对齐"""
 from __future__ import annotations
 
 import sys
@@ -68,7 +68,7 @@ def panel_b(ax, m):
             ax.axhline(i - 0.5, color="#DDDDDD", lw=0.5, zorder=1)
     ax.set_yticks(range(len(EXTERNAL))); ax.set_yticklabels([l for _, l in EXTERNAL])
     ax.set_ylim(len(EXTERNAL) - 0.5, -0.5); ax.set_xlim(0.5, 0.95)
-    ax.set_xlabel("$\\kappa$: DDR standard → aligned, 5 photographs per grade\n(bars, SD over five draws)")
+    ax.set_xlabel("$\\kappa$: DDR standard → aligned, 5 photographs per grade\n(bars, SD over draws)")
     h = [Line2D([], [], color=MODEL_COLOR[k], lw=1, label=MODEL_LABEL[k]) for k in keys]
     ax.legend(handles=h, loc="lower left", bbox_to_anchor=(0, 1.0), frameon=False, fontsize=5.6, ncol=2, borderaxespad=0.1,
               columnspacing=0.8)
@@ -76,29 +76,31 @@ def panel_b(ax, m):
 
 
 def panel_c(ax, m):
-    d = m[(m.input == "LesionCover") & (m.cohort == "idrid")]
-    sets = [("DDR standard", d[(d.method == "none") & (d.per_grade == 5)].iloc[0], "#BBBBBB"),
-            ("Aligned, 5 per grade", d[(d.method == METH) & (d.per_grade == 5)].iloc[0], "#E8A39B"),
-            ("Aligned, 20 per grade", d[(d.method == METH) & (d.per_grade == 20)].iloc[0], LC_COL)]
-    stats = [("mild_to_moderate_plus", "Mild DR graded\nas moderate or worse"), ("ref_spec", "Referable DR\nspecificity"),
-             ("ref_sens", "Referable DR\nsensitivity")]
-    rows, w = [], 0.26
-    for j, (lab, r, col) in enumerate(sets):
-        for i, (st, _) in enumerate(stats):
-            v = 100 * r[st]; x = i + (j - 1) * w
-            ax.bar(x, v, width=w * 0.92, color=col, zorder=2)
-            ax.text(x, v + 1.5, f"{v:.0f}", ha="center", va="bottom", fontsize=5.4)
-            rows.append({"setting": lab, "stat": st, "percent": v})
-    ax.set_xticks(range(len(stats))); ax.set_xticklabels([l for _, l in stats], fontsize=6)
-    ax.set_ylim(0, 118); ax.set_yticks([0, 25, 50, 75, 100]); ax.set_ylabel("IDRiD, LesionCover (%)")
-    ax.legend([plt.Rectangle((0, 0), 1, 1, color=c) for _, _, c in sets], [l for l, _, _ in sets], loc="upper left",
-              frameon=False, fontsize=5.6, ncol=3, borderaxespad=0.1, bbox_to_anchor=(0, 1.04), columnspacing=0.8)
+    """每个外部队列：可转诊特异度与敏感度，DDR 标准层 → 每级 5 张对齐（LesionCover）。"""
+    d = m[m.input == "LesionCover"]
+    rows = []
+    stats = [("ref_spec", "Specificity", "#4C72B0", 0.17), ("ref_sens", "Sensitivity", LC_COL, -0.17)]
+    for i, (coh, _) in enumerate(EXTERNAL):
+        x = d[(d.cohort == coh) & (d.per_grade == 5)].set_index("method")
+        for st, lab, col, off in stats:
+            a, b = 100 * x.loc["none", st], 100 * x.loc[METH, st]
+            y = i + off
+            ax.annotate("", xy=(b, y), xytext=(a, y), arrowprops=dict(arrowstyle="-|>", color=col, lw=1.0, mutation_scale=7),
+                        zorder=2)
+            ax.plot(a, y, "o", mfc="white", mec=col, mew=1.0, ms=3.6, zorder=3)
+            rows.append({"cohort": coh, "stat": st, "ddr_standard": a, "aligned_5_per_grade": b})
+    ax.set_yticks(range(len(EXTERNAL))); ax.set_yticklabels([l for _, l in EXTERNAL])
+    ax.invert_yaxis(); ax.set_xlim(35, 102); ax.set_xlabel("Referable DR, LesionCover (%)\nDDR standard → aligned, 5 photographs per grade")
+    for i in range(len(EXTERNAL) - 1):
+        ax.axhline(i + 0.5, color="#DDDDDD", lw=0.5, zorder=0)
+    ax.legend([Line2D([0], [0], color=c, lw=1.2) for _, _, c, _ in stats], [l for _, l, _, _ in stats], loc="lower left",
+              bbox_to_anchor=(0, 1.0), ncol=2, frameon=False, fontsize=5.8, borderaxespad=0.1)
     return pd.DataFrame(rows)
 
 
 def main():
     apply_style()
-    m = pd.read_csv(R / "08v_local_calibration/metrics.tsv", sep="\t")
+    m = pd.read_csv(R / "08v_local_calibration/metrics.tsv", sep="\t"); m = m[m.scheme == "balanced"]
     fig = plt.figure(figsize=(W2, 118 / 25.4), constrained_layout=True)
     gs = fig.add_gridspec(2, 2, width_ratios=[0.9, 1.1], height_ratios=[1, 1])
     axa, axb, axc = fig.add_subplot(gs[:, 0]), fig.add_subplot(gs[0, 1]), fig.add_subplot(gs[1, 1])

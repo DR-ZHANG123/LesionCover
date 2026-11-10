@@ -44,3 +44,15 @@ G1024_s33_effm python scripts/stages/07_classify.py --method G1024 --seed 33 --v
 G1024_s33_r50 python scripts/stages/07_classify.py --method G1024 --seed 33 --variant r50 && python scripts/stages/07c_predict_idrid.py --role idrid --tags G1024_s33_r50 && python scripts/stages/07c_predict_idrid.py --role messidor2 --tags G1024_s33_r50 && python scripts/stages/07c_predict_idrid.py --role eyepacs --tags G1024_s33_r50 && python scripts/stages/07c_predict_idrid.py --role mmrdr --manifest results/01b_mmrdr/images.tsv --tags G1024_s33_r50
 GDRNet_s33 python scripts/stages/07p_published_methods.py --algorithm GDRNet --seed 33
 CABNet_s33 python scripts/stages/07p_published_methods.py --algorithm CABNet --seed 33
+LC_rfrglearn_s11 python scripts/stages/07n_lcnet.py --seed 11 --tag rfrglearn --rule-learn --gate --fm vit_large_patch14_dinov2.lvd142m --fm-weights retfound --predict ddr_dev ddr_test deepdrid idrid messidor2 eyepacs mmrdr
+LC_rfnolesion_s11 python scripts/stages/07n_lcnet.py --seed 11 --tag rfnolesion --no-lesion --fm vit_large_patch14_dinov2.lvd142m --fm-weights retfound --predict ddr_dev ddr_test deepdrid idrid messidor2 eyepacs mmrdr
+LC_rfrglearn_s22 python scripts/stages/07n_lcnet.py --seed 22 --tag rfrglearn --rule-learn --gate --fm vit_large_patch14_dinov2.lvd142m --fm-weights retfound --predict ddr_dev ddr_test deepdrid idrid messidor2 eyepacs mmrdr
+LC_rfnolesion_s22 python scripts/stages/07n_lcnet.py --seed 22 --tag rfnolesion --no-lesion --fm vit_large_patch14_dinov2.lvd142m --fm-weights retfound --predict ddr_dev ddr_test deepdrid idrid messidor2 eyepacs mmrdr
+LC_rfrglearn_s33 python scripts/stages/07n_lcnet.py --seed 33 --tag rfrglearn --rule-learn --gate --fm vit_large_patch14_dinov2.lvd142m --fm-weights retfound --predict ddr_dev ddr_test deepdrid idrid messidor2 eyepacs mmrdr
+LC_rfnolesion_s33 python scripts/stages/07n_lcnet.py --seed 33 --tag rfnolesion --no-lesion --fm vit_large_patch14_dinov2.lvd142m --fm-weights retfound --predict ddr_dev ddr_test deepdrid idrid messidor2 eyepacs mmrdr
+07p_GDRNet_s11_512 python scripts/stages/07p_published_methods.py --algorithm GDRNet --seed 11 --size 512
+07p_GDRNet_s22_512 python scripts/stages/07p_published_methods.py --algorithm GDRNet --seed 22 --size 512
+07p_GDRNet_s33_512 python scripts/stages/07p_published_methods.py --algorithm GDRNet --seed 33 --size 512
+07p_CABNet_s11_512 python scripts/stages/07p_published_methods.py --algorithm CABNet --seed 11 --size 512
+07p_CABNet_s22_512 python scripts/stages/07p_published_methods.py --algorithm CABNet --seed 22 --size 512
+07p_CABNet_s33_512 python scripts/stages/07p_published_methods.py --algorithm CABNet --seed 33 --size 512

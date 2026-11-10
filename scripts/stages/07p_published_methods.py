@@ -46,8 +46,22 @@ class Fundus(Dataset):
         return x, self.mtf(m), int(self.y[i]), 0, i
 
 
-def import_official(code_dir: Path):
+def import_official(code_dir: Path, size: int = 224):
+    """size ≠ 224 时按比例改写官方 data_manager 中写死的输入边长（裁剪 re_size 与缩放 size = re_size × 256/224，取 8 的倍数以满足 FundusAug 的整数中心），
+    其余增强与网络不变；改写后的模块在导入 algorithms 之前注册，使 GDRNet 的 post-FundusAug 使用同一边长。"""
     sys.path.insert(0, str(code_dir))
+    if size != 224:
+        import importlib.util
+        import types
+        import dataset  # noqa: F401,E402
+        src = (code_dir / "dataset/data_manager.py").read_text()
+        n = src.count("re_size = 224")
+        src = src.replace("size = 256", f"size = {8 * round(size * 256 / 224 / 8)}").replace("re_size = 224", f"re_size = {size}")
+        assert n == 3, n
+        mod = types.ModuleType("dataset.data_manager"); mod.__file__ = str(code_dir / "dataset/data_manager.py")
+        mod.__package__ = "dataset"
+        sys.modules["dataset.data_manager"] = mod
+        exec(compile(src, mod.__file__, "exec"), mod.__dict__)
     import algorithms  # noqa: E402
     from configs.defaults import _C  # noqa: E402
     from dataset import data_manager  # noqa: E402
@@ -78,12 +92,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--algorithm", required=True)
     ap.add_argument("--seed", type=int, required=True)
+    ap.add_argument("--size", type=int, default=None, help="输入边长（缺省取 config published_methods.size，官方为 224）")
     args = ap.parse_args()
     cfg = load_config(); pm = cfg["published_methods"]
     code = ROOT / pm["code_dir"]
-    algorithms, _C, dm, DahLoss, get_scheduler = import_official(code)
+    size = args.size or pm.get("size", 224)
+    algorithms, _C, dm, DahLoss, get_scheduler = import_official(code, size)
     set_global_seed(args.seed); torch.set_num_threads(8)
-    tag = f"{args.algorithm}_s{args.seed}"
+    tag = f"{args.algorithm}_s{args.seed}" + ("" if size == 224 else f"_{size}")
     out = ROOT / "results/07_classify" / tag; out.mkdir(parents=True, exist_ok=True)
 
     man = manifest()
@@ -150,7 +166,7 @@ def main():
     pd.concat(rows).to_csv(out / "predictions.tsv.gz", sep="\t", index=False, float_format="%.5f")
     write_provenance(f"07_classify/{tag}", [ROOT / "results/02_manifest/images.tsv", ROOT / "results/01b_mmrdr/images.tsv"],
                      [out / "predictions.tsv.gz", out / "train_log.tsv"], seed=args.seed,
-                     extra={"algorithm": args.algorithm, "code_commit": pm["code_commit"], "setting": pm["setting"],
+                     extra={"algorithm": args.algorithm, "code_commit": pm["code_commit"], "setting": pm["setting"], "input_size": size,
                             "best_epoch": best_ep, "best_dev_qwk": best})
 
 

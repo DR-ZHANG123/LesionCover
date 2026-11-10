@@ -21,7 +21,7 @@ from scripts.lib.stats import eye_level  # noqa: E402
 v8c = importlib.import_module("scripts.stages.08c_variants")
 P = [f"p{i}" for i in range(5)]
 COHORTS = ("ddr_test", "deepdrid", "idrid", "messidor2", "eyepacs", "mmrdr")
-PATIENT_UNITS = ("deepdrid", "eyepacs")
+PATIENT_UNITS = ("deepdrid", "eyepacs", "messidor2")   # Messidor-2 的 patient_id 为检查编号（每次检查两张照片）
 REF = "LesionCover"
 # 输入名 → (来源, 键)：lc 为 07n_lcnet 的运行标签，cls 为 07_classify 的方法_variant
 INPUTS = {"LesionCover": ("lc", "fmrglearn"), "Fixed rule thresholds": ("lc", "fmrg"),
@@ -30,7 +30,9 @@ INPUTS = {"LesionCover": ("lc", "fmrglearn"), "Fixed rule thresholds": ("lc", "f
           "Gate only": ("lc", "gate"), "Rule only": ("lc", "rule"), "Global tokens only": ("lc", "nolesion"),
           "Global 1024": ("cls", "G1024"), "Global 512": ("cls", "G512"), "Global 512 + crops": ("cls", "C_k4_aux"),
           "ResNet-50 1024": ("cls", "G1024_r50"), "Swin-T 1024": ("cls", "G1024_swin"),
-          "EfficientNetV2-M 1024": ("cls", "G1024_effm"), "GDRNet": ("cls", "GDRNet"), "CABNet": ("cls", "CABNet")}
+          "EfficientNetV2-M 1024": ("cls", "G1024_effm"), "GDRNet": ("cls", "GDRNet"), "CABNet": ("cls", "CABNet"),
+          "GDRNet 512": ("cls", "GDRNet_512"), "CABNet 512": ("cls", "CABNet_512"),
+          "LesionCover, RETFound encoder": ("lc", "rfrglearn"), "RETFound global tokens only": ("lc", "rfnolesion")}
 STATS = {"ref_sens": (lambda y: y >= 2, lambda p: p >= 2), "ref_spec": (lambda y: y < 2, lambda p: p < 2),
          "healthy_fp": (lambda y: y == 0, lambda p: p >= 1), "mild_missed": (lambda y: y == 1, lambda p: p == 0),
          "accuracy": (lambda y: np.ones(len(y), bool), None)}

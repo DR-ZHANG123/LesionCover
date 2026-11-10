@@ -1,4 +1,4 @@
-# 全部可调参数。脚本只从这里读，不硬编码。
+# LesionCover 全部可调参数。脚本只从这里读，不硬编码。
 seed: 2026
 seeds: [11, 22, 33]            # 分级模型的三个训练种子
 
@@ -150,11 +150,19 @@ lcnet:                         # LesionCover 网络：1024 全局图 + 病灶 to
 grading_standard:              # 08u：各队列隐含分级标准（同一病灶尺子上的有序回归切点）；只做描述，不参与选择
   n_boot: 1000
 
+shift_robustness:              # 08z：偏移的稳健性（参照选择 + 联合自助、DDR 内部对半分、位置–尺度/部分比例优势）
+  n_boot_joint: 500
+  n_split: 500
+  n_jobs: 32
+
 local_calibration:             # 08v：部署步骤，新队列少量标注只重估输出层（单独评价，主表不变）；校准集与评价集按单位分开
-  per_grade: [5, 20]           # 每个等级抽取的校准样本数
-  repeats: 5
+  per_grade: [5, 10, 20]       # 每个等级抽取的校准样本数（从校准池抽；不足时取全部）
+  repeats: 200                 # 每种 k 的独立抽样次数
+  schemes: [balanced, natural] # balanced：每级 k 个；natural：校准池中随机 5k 个（自然等级比例）
+  n_boot: 2000                 # 配对比较的自助次数（抽样 × 评价集单位）
+  n_jobs: 16
   cohorts: [deepdrid, idrid, messidor2, eyepacs, mmrdr]
-  inputs: [LesionCover, "DINOv2 global tokens only", "Fixed rule thresholds", "ConvNeXt-T, fixed thresholds", "ConvNeXt-T encoder", "Global 1024", "Swin-T 1024", "EfficientNetV2-M 1024", "ResNet-50 1024", GDRNet, CABNet]
+  inputs: [LesionCover, "DINOv2 global tokens only", "Fixed rule thresholds", "ConvNeXt-T, fixed thresholds", "ConvNeXt-T encoder", "Global 1024", "Swin-T 1024", "EfficientNetV2-M 1024", "ResNet-50 1024", GDRNet, CABNet, "GDRNet 512", "CABNet 512", "LesionCover, RETFound encoder", "RETFound global tokens only"]
 
 published_methods:             # 07p：已发表方法用其官方代码（GDRBench，github.com/chehx/DGDR）在同一 DDR 训练区重新训练
   code_dir: data/ext/DGDR      # 相对项目根目录；00_fetch_mmrdr.py 按固定 commit 取得

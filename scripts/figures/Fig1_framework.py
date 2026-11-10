@@ -131,7 +131,7 @@ def panel_a(ax, key, p, tokens, counts):
     ax.text(ox + ow / 2 + 1, oy - 1.5, "via the standard layer\n(temperature T,\ngrade biases b$_m$)", ha="center", va="top", fontsize=4.9,
             color=LC_COL)
     # 只看规则的有序分级
-    ax.text(bx + bw + 3, 60.5, "rule-only ordinal grade:\nP(grade > k) = σ(s − c$_k$)", fontsize=5.0, va="center", color="#8A6100")
+    ax.text(bx + bw + 3, 60.5, "rule-only ordinal grade:\nP(grade > m) = σ(r − γ$_m$)", fontsize=5.0, va="center", color="#8A6100")
     return pd.DataFrame({"image_key": [key] * 5, "grade": range(5), "probability": p})
 
 

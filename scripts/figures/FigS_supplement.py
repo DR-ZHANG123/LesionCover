@@ -94,24 +94,25 @@ def fig_rule_only():
 
 
 def fig_calibration():
-    m = pd.read_csv(R / "08v_local_calibration/metrics.tsv", sep="\t")
+    m = pd.read_csv(R / "08v_local_calibration/metrics.tsv", sep="\t"); m = m[m.scheme == "balanced"]
     keys = ["LesionCover", "DINOv2 global tokens only", "Global 1024", "Swin-T 1024", "EfficientNetV2-M 1024", "ResNet-50 1024",
             "GDRNet", "CABNet"]
     meths = [("none", "DDR standard (as trained)", "#BBBBBB"), ("prior_em", "Label-free prior adjustment", "#8172B3"),
-             ("cutpoints", "Cut points on expected grade", "#55A868"), ("bias_temp", "Standard layer (temperature + grade biases)", "#C0392B")]
+             ("cutpoints", "Cut points on expected grade", "#55A868"), ("temp_only", "Temperature only", "#E6B85C"),
+             ("bias_only", "Grade biases only", "#4C72B0"), ("bias_temp", "Standard layer (temperature + grade biases)", "#C0392B")]
     fig, axs = plt.subplots(1, 2, figsize=(W2, 66 / 25.4), constrained_layout=True, sharey=True)
     rows = []
     for ax, k in zip(axs, (5, 20)):
         for j, (mt, lab, col) in enumerate(meths):
             for i, key in enumerate(keys):
                 v = m[(m.input == key) & (m.method == mt) & (m.per_grade == k)].qwk.mean()
-                ax.bar(i + (j - 1.5) * 0.2, v, width=0.19, color=col, label=lab if i == 0 else None)
+                ax.bar(i + (j - (len(meths) - 1) / 2) * 0.135, v, width=0.13, color=col, label=lab if i == 0 else None)
                 rows.append({"per_grade": k, "method": mt, "model": MODEL_LABEL[key], "mean_external_qwk": v})
         ax.set_xticks(range(len(keys))); ax.set_xticklabels([MODEL_LABEL[x] for x in keys], rotation=35, ha="right", fontsize=5.8)
         ax.set_ylim(0.3, 0.86); ax.set_title(f"{k} labelled photographs per grade", fontsize=6.6)
     axs[0].set_ylabel("Mean $\\kappa$, five external cohorts")
     h, l = axs[0].get_legend_handles_labels()
-    fig.legend(h, l, loc="outside lower center", ncol=4, frameon=False, fontsize=5.8)
+    fig.legend(h, l, loc="outside lower center", ncol=3, frameon=False, fontsize=5.8)
     panel_label(axs[0], "a"); panel_label(axs[1], "b")
     save_source(pd.DataFrame(rows), ROOT, "FigS3", "ab")
     print(save_fig(fig, ROOT, "FigS3"))
