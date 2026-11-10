@@ -104,7 +104,7 @@ def panel_d(ax, ed):
         ax.text(d.loc[c, "standard_shift_grade2"] + dx, 100 * d.loc[c, "value"] + dy, lab[c], fontsize=5.6,
                 ha="left" if dx > 0 else "right", va="center", color=COH_COLOR[c])
     ax.set_xlim(-0.6, 1.5); ax.set_ylim(0, 100)
-    ax.set_xlabel("Shift of the mild | moderate boundary\nvs DDR training (lesion burden index)")
+    ax.set_xlabel("Shift of the mild | moderate boundary\nvs DDR training (lesion severity score)")
     ax.set_ylabel("Mild DR graded as moderate or worse (%)")
     h = [Line2D([], [], ls="", marker="o", color="#555555", ms=3.6, label="LesionCover"),
          Line2D([], [], ls="", marker="o", mfc="white", mec="#555555", ms=3.4, label="DINOv2-L, global view only")]

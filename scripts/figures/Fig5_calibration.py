@@ -44,9 +44,9 @@ def panel_a(ax, m):
             t.set_fontweight("bold")
     ax.set_ylim(len(df) - 0.5, -0.5); ax.set_xlim(0.45, 0.82)
     ax.set_xlabel("Mean $\\kappa$, five external cohorts")
-    h = [Line2D([], [], ls="", marker="o", mfc="white", mec="#555555", ms=3.6, label="DDR standard (as trained)"),
-         Line2D([], [], ls="", marker="o", color="#555555", ms=3.6, label="Aligned, 5 photographs per grade"),
-         Line2D([], [], ls="", marker="|", color="#555555", ms=5, label="Aligned, 20 photographs per grade")]
+    h = [Line2D([], [], ls="", marker="o", mfc="white", mec="#555555", ms=3.6, label="Trained on DDR"),
+         Line2D([], [], ls="", marker="o", color="#555555", ms=3.6, label="Recalibrated, 5 photographs per grade"),
+         Line2D([], [], ls="", marker="|", color="#555555", ms=5, label="Recalibrated, 20 photographs per grade")]
     ax.legend(handles=h, loc="lower left", bbox_to_anchor=(0, 1.0), frameon=False, fontsize=5.6, borderaxespad=0.1,
               handletextpad=0.3)
     return df.drop(columns="key")
@@ -68,7 +68,7 @@ def panel_b(ax, m):
             ax.axhline(i - 0.5, color="#DDDDDD", lw=0.5, zorder=1)
     ax.set_yticks(range(len(EXTERNAL))); ax.set_yticklabels([l for _, l in EXTERNAL])
     ax.set_ylim(len(EXTERNAL) - 0.5, -0.5); ax.set_xlim(0.5, 0.95)
-    ax.set_xlabel("$\\kappa$: DDR standard → aligned, 5 photographs per grade\n(bars, SD over draws)")
+    ax.set_xlabel("$\\kappa$: trained on DDR → recalibrated, 5 photographs per grade\n(bars, SD over draws)")
     h = [Line2D([], [], color=MODEL_COLOR[k], lw=1, label=MODEL_LABEL[k]) for k in keys]
     ax.legend(handles=h, loc="lower left", bbox_to_anchor=(0, 1.0), frameon=False, fontsize=5.6, ncol=2, borderaxespad=0.1,
               columnspacing=0.8)
@@ -90,7 +90,7 @@ def panel_c(ax, m):
             ax.plot(a, y, "o", mfc="white", mec=col, mew=1.0, ms=3.6, zorder=3)
             rows.append({"cohort": coh, "stat": st, "ddr_standard": a, "aligned_5_per_grade": b})
     ax.set_yticks(range(len(EXTERNAL))); ax.set_yticklabels([l for _, l in EXTERNAL])
-    ax.invert_yaxis(); ax.set_xlim(35, 102); ax.set_xlabel("Referable DR, LesionCover (%)\nDDR standard → aligned, 5 photographs per grade")
+    ax.invert_yaxis(); ax.set_xlim(35, 102); ax.set_xlabel("Referable DR, LesionCover (%)\ntrained on DDR → recalibrated, 5 photographs per grade")
     for i in range(len(EXTERNAL) - 1):
         ax.axhline(i + 0.5, color="#DDDDDD", lw=0.5, zorder=0)
     ax.legend([Line2D([0], [0], color=c, lw=1.2) for _, _, c, _ in stats], [l for _, l, _, _ in stats], loc="lower left",

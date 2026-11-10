@@ -97,9 +97,9 @@ def fig_calibration():
     m = pd.read_csv(R / "08v_local_calibration/metrics.tsv", sep="\t"); m = m[m.scheme == "balanced"]
     keys = ["LesionCover", "DINOv2 global tokens only", "Global 1024", "Swin-T 1024", "EfficientNetV2-M 1024", "ResNet-50 1024",
             "GDRNet", "CABNet"]
-    meths = [("none", "DDR standard (as trained)", "#BBBBBB"), ("prior_em", "Label-free prior adjustment", "#8172B3"),
+    meths = [("none", "Trained on DDR", "#BBBBBB"), ("prior_em", "Label-free prior adjustment", "#8172B3"),
              ("cutpoints", "Cut points on expected grade", "#55A868"), ("temp_only", "Temperature only", "#E6B85C"),
-             ("bias_only", "Grade biases only", "#4C72B0"), ("bias_temp", "Standard layer (temperature + grade biases)", "#C0392B")]
+             ("bias_only", "Grade intercepts only", "#4C72B0"), ("bias_temp", "Temperature + grade intercepts", "#C0392B")]
     fig, axs = plt.subplots(1, 2, figsize=(W2, 66 / 25.4), constrained_layout=True, sharey=True)
     rows = []
     for ax, k in zip(axs, (5, 20)):

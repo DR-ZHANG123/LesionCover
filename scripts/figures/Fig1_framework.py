@@ -128,7 +128,7 @@ def panel_a(ax, key, p, tokens, counts):
         ax.text(ox + 5.2, y + 1.5, str(g), fontsize=5.2, ha="right", va="center")
         ax.text(ox + 6.5 + (ow - 7) * p[g], y + 1.5, f"{p[g]:.2f}", fontsize=4.8, va="center")
     ax.text(ox + ow / 2 + 1, oy + 23.2, "Grade\nprobabilities", ha="center", fontsize=5.6, fontweight="bold")
-    ax.text(ox + ow / 2 + 1, oy - 1.5, "via the standard layer\n(temperature T,\ngrade biases b$_m$)", ha="center", va="top", fontsize=4.9,
+    ax.text(ox + ow / 2 + 1, oy - 1.5, "via the recalibration layer\n(temperature T,\ngrade intercepts b$_m$)", ha="center", va="top", fontsize=4.9,
             color=LC_COL)
     # 只看规则的有序分级
     ax.text(bx + bw + 3, 60.5, "rule-only ordinal grade:\nP(grade > m) = σ(r − γ$_m$)", fontsize=5.0, va="center", color="#8A6100")
@@ -158,7 +158,7 @@ def panel_b(ax):
     ax.text(x0 + 21, 2.6, "photographs (DeepDRiD graded per eye)", ha="center", fontsize=5.0, color=GREY)
     # 同一把病灶尺子
     rx = 100
-    ax.text(rx + 15, 43.2, "Same lesion ruler in every cohort", ha="center", fontsize=5.8, fontweight="bold")
+    ax.text(rx + 15, 43.2, "Same lesion segmenter in every cohort", ha="center", fontsize=5.8, fontweight="bold")
     for i, (c, sh, col) in enumerate([("DDR", 0.0, "#424242"), ("External", 1.0, "#1B9E77")]):
         y = 33 - i * 10
         ax.plot([rx, rx + 30], [y, y], color=GREY, lw=0.7)
@@ -168,13 +168,13 @@ def panel_b(ax):
             ax.plot([x, x], [y - 1.6, y + 1.6], color=LC_COL if j == 1 else col, lw=1.1 if j == 1 else 0.8)
     ax.annotate("", xy=(rx + 13, 20.6), xytext=(rx + 9, 20.6),
                 arrowprops=dict(arrowstyle="-|>", color=LC_COL, lw=0.8, mutation_scale=6))
-    ax.text(rx + 15, 14.5, "lesion burden index\n(mild | moderate boundary in red)", ha="center", va="top", fontsize=5.0, color=GREY)
+    ax.text(rx + 15, 14.5, "lesion severity score\n(mild | moderate boundary in red)", ha="center", va="top", fontsize=5.0, color=GREY)
     return pd.DataFrame(cohorts, columns=["cohort", "n"])
 
 
 def panel_c(ax):
     ax.text(136, 47, "c", fontsize=9, fontweight="bold", va="top")
-    box(ax, 139, 26, 33, 15, "New site: align standard layer", "5 labelled photographs per grade\nre-estimate T and 4 grade biases\nall other weights unchanged",
+    box(ax, 139, 26, 33, 15, "New site: recalibrate output layer", "5 labelled photographs per grade\nre-estimate T and 4 grade biases\nall other weights unchanged",
         fc="#FBEDEC", ec=LC_COL)
     ax.text(155.5, 22.5, "Evaluated on photographs of\nother patients in the same cohort", ha="center", va="top", fontsize=5.0,
             color=GREY)

@@ -43,6 +43,7 @@ STAGES=(
   "08x_learned_rule|08x_learned_rule|python scripts/stages/08x_learned_rule.py"
   "08y_error_direction|08y_error_direction|python scripts/stages/08y_error_direction.py"
   "08z_shift_robustness|08z_shift_robustness|python scripts/stages/08z_shift_robustness.py"
+  "08za_interpretability|08za_interpretability|for s in 11 22 33; do python scripts/stages/08za_interpretability.py --seed $s; done; python scripts/stages/08za_interpretability.py --merge"
   "10_tables|10_tables|python scripts/stages/10_tables.py"
 )
 

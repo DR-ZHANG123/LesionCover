@@ -33,7 +33,7 @@ def panel_a(ax):
         ax.errorbar(x, d.burden_median, yerr=[d.burden_median - d.burden_q25, d.burden_q75 - d.burden_median],
                     fmt="o", ms=2.6, color=COH_COLOR[c], elinewidth=0.6, capsize=0, zorder=3)
     ax.set_xticks(range(5)); ax.set_xticklabels(["0\nNo DR", "1\nMild", "2\nModerate", "3\nSevere", "4\nPDR"])
-    ax.set_xlabel("Reference grade"); ax.set_ylabel("Lesion burden index")
+    ax.set_xlabel("Reference grade"); ax.set_ylabel("Lesion severity score")
     h = [Line2D([], [], color=COH_COLOR[c], marker="o", ms=2.6, lw=0.9, label=COH_LABEL[c]) for c in ORDER]
     ax.legend(handles=h, loc="upper left", frameon=False, fontsize=5.6, handlelength=1.4, borderaxespad=0.1)
     return bg
@@ -52,7 +52,7 @@ def panel_b(ax):
     ax.axvline(0, color="#999999", lw=0.6, ls="--", zorder=1)
     ax.set_yticks(range(len(cohs))); ax.set_yticklabels([COH_LABEL[c] for c in cohs])
     ax.set_ylim(len(cohs) - 0.5, -0.5)
-    ax.set_xlabel("Shift of grade boundary vs DDR training\n(lesion burden index, 95% CI)")
+    ax.set_xlabel("Shift of grade boundary vs DDR training\n(lesion severity score, 95% CI)")
     h = [Line2D([], [], ls="", marker="o", ms=3, color=cols[j], label=l)
          for j, l in enumerate(["No DR | DR", "Mild | moderate", "Moderate | severe", "Severe | PDR"])]
     ax.legend(handles=h, loc="lower left", bbox_to_anchor=(0, 1.0), ncol=2, frameon=False, fontsize=5.6,

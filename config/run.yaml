@@ -172,3 +172,9 @@ published_methods:             # 07p：已发表方法用其官方代码（GDRBe
   backbone: resnet50
   fov_threshold: 10            # 视野掩膜（FundusAug 需要）：规范化照片灰度 > 阈值
   num_workers: 8
+
+interpretability:              # 08za：概念消融、输出分解、注意力分配与反事实计数（LesionCover 三个种子）
+  seeds: [11, 22, 33]
+  lesions: [MA, HE, EX, SE]
+  quadrants: [1, 2, 4]
+  counts: [0, 1, 2, 5, 10, 20]
